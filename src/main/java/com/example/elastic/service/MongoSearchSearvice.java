@@ -1,0 +1,26 @@
+package com.example.elastic.service;
+
+import com.example.elastic.model.DocumentMetadata;
+import com.example.elastic.repository.DocumentMongoRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class MongoSearchSearvice {
+
+    private final DocumentMongoRepository documentMongoRepository;
+
+    public MongoSearchSearvice(DocumentMongoRepository documentMongoRepository) {
+        this.documentMongoRepository = documentMongoRepository;
+    }
+
+    public List<DocumentMetadata> getAllDocuments(){
+        try {
+            return documentMongoRepository.findAll();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+}
