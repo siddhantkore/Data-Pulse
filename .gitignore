@@ -33,7 +33,6 @@ build/
 .vscode/
 
 application.properties
-test
 
 checkstyle
 checkstyle.xml
