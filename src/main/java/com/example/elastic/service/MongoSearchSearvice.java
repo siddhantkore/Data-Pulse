@@ -23,4 +23,13 @@ public class MongoSearchSearvice {
         }
         return null;
     }
+
+    public List<DocumentMetadata> findText(String text) {
+        try {
+            return documentMongoRepository.searchByTitleDeptOrKeyword(text);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

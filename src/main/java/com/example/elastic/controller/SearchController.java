@@ -34,7 +34,7 @@ public class SearchController {
     @GetMapping("/text-search")
     public ResponseEntity<List<DocumentMetadata>> search(@RequestParam String q) {
         try {
-            List<DocumentMetadata> results =  elasticSearchService.fullTextSearch(q);
+            List<DocumentMetadata> results =  mongoSearchSearvice.findText(q);
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
