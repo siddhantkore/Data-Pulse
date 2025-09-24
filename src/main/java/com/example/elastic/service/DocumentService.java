@@ -9,12 +9,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.sourceforge.tess4j.Tesseract;
-import net.sourceforge.tess4j.TesseractException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +85,7 @@ public class DocumentService {
 
 
     public DocumentMetadata processAndStore(MultipartFile file) {
-        DocumentMetadata documentMetadata = null;
+        DocumentMetadata documentMetadata = new DocumentMetadata();
         try {
             String key = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
