@@ -2,30 +2,32 @@ package com.example.elastic.controller;
 
 import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
 import com.example.elastic.model.DocumentMetadata;
-import com.example.elastic.service.DocumentService;
+import com.example.elastic.service.DocumentProcessorService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 
 @RestController
 @RequestMapping("/api/documents")
 @CrossOrigin(origins = "*")
 public class DocumentController {
 
-    private final DocumentService documentService;
+    private final DocumentProcessorService documentProcessorService;
     private final GmailIMAPConnector connector;
+//    private final S3DocumentFetchService s3Service;
 
-    public DocumentController(DocumentService documentService, GmailIMAPConnector connector) {
-        this.documentService = documentService;
+    public DocumentController(DocumentProcessorService documentProcessorService, GmailIMAPConnector connector /*, S3DocumentFetchService s3Service*/) {
+        this.documentProcessorService = documentProcessorService;
         this.connector = connector;
+//        this.s3Service = s3Service;
     }
 
     /**
@@ -35,13 +37,14 @@ public class DocumentController {
      * Calls processAndStore in DocumentService
      */
     @PostMapping("/upload")
+    @CrossOrigin(origins="*")
     public ResponseEntity<DocumentMetadata> uploadFile(@RequestParam("file") MultipartFile file) {
-        DocumentMetadata saved = documentService.processAndStore(file);
+        DocumentMetadata saved = documentProcessorService.processAndStore(file);
         return ResponseEntity.ok(saved);
     }
 
     /**
-     * @return currently row implementation
+     * @return currently row implementation for email fetching
      */
     @GetMapping("/pull")
     public ResponseEntity<String> pullMails () {
@@ -51,8 +54,20 @@ public class DocumentController {
         return ResponseEntity.ok("Bad Not OK");
     }
 
-    @GetMapping("/get")
-    public ResponseEntity<File> getDocument() {
+
+    /**
+     *
+     * @param s3Key and
+     * @return The respective document from S3
+     */
+    @GetMapping("/download/{s3Key}")
+    public ResponseEntity<byte[]> getDocument(@PathVariable String s3Key) {
+//        byte[] content = s3Service.getDocument("my-bucket-name", s3Key);
+
+//        return ResponseEntity.ok()
+//                .header("Content-Type", "application/octet-stream")
+//                .header("Content-Disposition", "attachment; filename=\"" + s3Key + "\"")
+//                .body(content);
         return null;
     }
 }

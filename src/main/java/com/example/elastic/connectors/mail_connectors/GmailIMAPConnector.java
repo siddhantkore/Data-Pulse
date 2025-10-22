@@ -1,8 +1,9 @@
 package com.example.elastic.connectors.mail_connectors;
 
-import com.example.elastic.model.MailModelDTO;
 import com.example.elastic.sandbox.Sandbox;
-import com.example.elastic.service.DocumentService;
+import com.example.elastic.service.DocumentProcessorService;
+import com.example.elastic.utils.InMemoryMultipartFile;
+
 import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.Message;
@@ -22,12 +23,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -37,7 +34,6 @@ import java.util.Calendar;
 
 /**
  * Service to fetch Mails and attachments from Gmail
- *
  * Inserts username and password form application.properties using @Value
  */
 @Service
@@ -50,7 +46,7 @@ public class GmailIMAPConnector implements EmailConnector {
     private final String password;
 
     @Autowired
-    private DocumentService documentService;
+    private DocumentProcessorService documentProcessorService;
 
 //    @Autowired
 //    private MailModelDTO mailModelDTO;
@@ -61,17 +57,17 @@ public class GmailIMAPConnector implements EmailConnector {
         this.password = password;
     }
 
-    protected Session createSession() {
+    public Session createSession() {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
         return Session.getInstance(props, null);
     }
 
-    protected Store createStore(Session session) throws MessagingException {
+    public Store createStore(Session session) throws MessagingException {
         return session.getStore("imaps");
     }
 
-    protected Folder getInbox(Store store) throws MessagingException {
+    public Folder getInbox(Store store) throws MessagingException {
         return store.getFolder("INBOX");
     }
 
@@ -80,93 +76,90 @@ public class GmailIMAPConnector implements EmailConnector {
      * Next: Fetching Mail Data using a DTO as we are already pulling mails
      * Enhancement: Configure try and catch - currently row use
      * Will return fetched attachments from email as List<File>
+     *
      * @return list files of type File - currently using a helper to convert it to MultipartFile
      */
+
     @Override
-    public List<File> fetchAttachments() {
+    public List<MultipartFile> fetchAttachments() {
+        List<MultipartFile> attachments = new ArrayList<>();
         Store store = null;
         Folder inbox = null;
 
-        List<File> attachments = new ArrayList<>();
         try {
-
             Session session = createSession();
-            store = null;
-            inbox = null;
+            store = createStore(session);
+            store.connect("imap.gmail.com", username, password);
+            logger.info("Connected to Gmail IMAP.");
 
-            logger.info("Going to fetch Attachments");
-            try {
-                // Connect to the IMAP server
-                store = createStore(session);
-                store.connect("imap.gmail.com", username, password);
-                logger.info("Connected to Mail");
+            // Open the INBOX folder
+            inbox = getInbox(store);
+            inbox.open(Folder.READ_ONLY);
 
-                // Open the INBOX folder
-                inbox = getInbox(store);
-                inbox.open(Folder.READ_ONLY);
+            // Get messages from the inbox
+            // specify the criteria - By Date, By unread with SEEN etc.
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DATE, -2); // last 1 day
+            Date sinceDate = cal.getTime();
 
-                // Get messages from the inbox
-                // specify the criteria - By Date, By unread with SEEN etc.
-                Calendar cal = Calendar.getInstance();
-                cal.add(Calendar.DATE, -2); // last 1 day
-                Date yesterday = cal.getTime();
+            Message[] messages = inbox.search(new ReceivedDateTerm(ComparisonTerm.GT, sinceDate));
+            Sandbox sandbox = new Sandbox();
+            sandbox.printMessages(messages);
+            logger.info("Found {} messages.", messages.length);
 
-                // implement the criteria
-                Message[] messages = inbox.search(new ReceivedDateTerm(ComparisonTerm.GT, yesterday));
-                Sandbox sandbox = new Sandbox();
-                sandbox.printMessages(messages);
-                logger.info("Found {} messages.", messages.length);
+            for (Message message : messages) {
 
-                for (Message message : messages) {
-                    // Check if the message is a multipart message
-                    if (message.getContent() instanceof Multipart) {
-                        Multipart multipart = (Multipart) message.getContent();
+                // Emails can contain plain text or multiple parts (attachments, body, etc.)
+                Object content = message.getContent();
 
-                        // Iterate through each part of the multipart message
-                        for (int i = 0; i < multipart.getCount(); i++) {
-                            BodyPart bodyPart = multipart.getBodyPart(i);
+                // If email content is multipart, process each part separately
+                if (content instanceof Multipart multipart) {
+                    for (int i = 0; i < multipart.getCount(); i++) {
+                        BodyPart bodyPart = multipart.getBodyPart(i);
 
-                            // Check if the body part is an attachment
-                            if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition()) || bodyPart.getFileName() != null) {
-                                MimeBodyPart mimeBodyPart = (MimeBodyPart) bodyPart;
-                                String fileName = mimeBodyPart.getFileName();
+                        // Check if this part is an attachment (based on disposition or filename)
+                        if (Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition())
+                                || bodyPart.getFileName() != null) {
 
-                                // Create a new file for the attachment
-                                File attachmentFile = new File(fileName);
-                                try (InputStream is = mimeBodyPart.getInputStream();
-                                     FileOutputStream fos = new FileOutputStream(attachmentFile)) {
-                                    byte[] buffer = new byte[4096];
-                                    int bytesRead;
-                                    while ((bytesRead = is.read(buffer)) != -1) {
-                                        fos.write(buffer, 0, bytesRead);
-                                    }
-                                    logger.info("Downloaded attachment: {} ", fileName);
-                                    attachments.add(attachmentFile);
-                                }
+                            MimeBodyPart mimeBodyPart = (MimeBodyPart) bodyPart;
+                            String fileName = mimeBodyPart.getFileName();
+
+                            // Step 5: Read attachment into memory (as bytes)
+                            try (InputStream is = mimeBodyPart.getInputStream();
+                                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+                                // Copy attachment data into byte array
+                                is.transferTo(baos);
+
+                                // Step 6: Wrap bytes into a MultipartFile (in-memory)
+                                MultipartFile multipartFile = new InMemoryMultipartFile(
+                                        fileName,                     // form field name
+                                        fileName,                     // original filename
+                                        bodyPart.getContentType(),    // MIME type
+                                        baos.toByteArray()            // actual bytes
+                                );
+
+                                // Add to list for return
+                                attachments.add(multipartFile);
+                                logger.info("Fetched attachment: {}", fileName);
                             }
                         }
                     }
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } catch (Exception e) {
-            logger.warn(e.getLocalizedMessage());
-        } finally {
-            // Close resources in a finally block
-            try {
-                if (inbox != null && inbox.isOpen()) {
-                    inbox.close(false); // 'false' means don't expunge deleted messages
-                }
-                if (store != null) {
-                    store.close();
-                }
-            } catch (Exception e) {
-                logger.warn(e.getLocalizedMessage());
             }
 
+        } catch (Exception e) {
+            logger.error("Error fetching attachments: {}", e.getMessage(), e);
+        } finally {
+            try {
+                if (inbox != null && inbox.isOpen()) inbox.close(false);
+                if (store != null) store.close();
+            } catch (MessagingException e) {
+                logger.warn("Error closing mail resources: {}", e.getMessage());
+            }
         }
-        logger.info("Attachment Returned");
+
+        logger.info("Returning {} attachments as MultipartFile.", attachments.size());
         return attachments;
     }
 
@@ -175,70 +168,19 @@ public class GmailIMAPConnector implements EmailConnector {
      * Calls to @fetchAttachments Method
      * Enhancement: Remove It
      * @return It's not permanent implementation as of now return bool for easy API access in controller
+     * Sends attachments directly to DocumentProcessorService.
      */
     public boolean sendToDocumentService() {
         try {
-            List<File> files = fetchAttachments();
-            for (File file : files) {
-                MultipartFile multipartFile = new MultipartFile()
-                {
-                    @Override
-                    public String getName() {
-                    return file.getName();
-                }
-
-                    @Override
-                    public String getOriginalFilename() {
-                    return file.getName();
-                }
-
-                    @Override
-                    public String getContentType() {
-                    return "application/octet-stream";
-                }
-
-                    @Override
-                    public boolean isEmpty() {
-                    return file.length() == 0;
-                }
-
-                    @Override
-                    public long getSize() {
-                    return file.length();
-                }
-
-                    @Override
-                    public byte[] getBytes() throws IOException {
-                    try (FileInputStream fis = new FileInputStream(file)) {
-                        return fis.readAllBytes();
-                    }
-                }
-
-                    @Override
-                    public InputStream getInputStream() throws IOException {
-                    return new FileInputStream(file);
-                }
-
-                    @Override
-                    public void transferTo(File dest) throws IOException, IllegalStateException {
-                    try (InputStream in = new FileInputStream(file);
-                         OutputStream out = new FileOutputStream(dest)) {
-                        byte[] buffer = new byte[4096];
-                        int read;
-                        while ((read = in.read(buffer)) != -1) {
-                            out.write(buffer, 0, read);
-                        }
-                    }
-                }
-                };
-
-                documentService.processAndStore(multipartFile);
+            List<MultipartFile> files = fetchAttachments();
+            for (MultipartFile multipartFile : files) {
+                documentProcessorService.processAndStore(multipartFile);
             }
             return true;
         } catch (Exception e) {
-            logger.warn(e.getLocalizedMessage());
+            logger.error("Error sending attachments to document service: {}", e.getMessage(), e);
+            return false;
         }
-        return false;
     }
 
 }

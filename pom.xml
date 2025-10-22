@@ -28,6 +28,7 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+        <google.api.client.version>2.5.0</google.api.client.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -46,7 +47,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
+            <scope>test</scope>
 		</dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -59,14 +60,20 @@
             <artifactId>lept4j</artifactId>
             <version>1.21.1</version>
         </dependency>
-
-<!--        <dependency>-->
+<!--        activate for s3-->
+<!--        <dependency> -->
 <!--            <groupId>software.amazon.awssdk</groupId>-->
 <!--            <artifactId>s3</artifactId>-->
 <!--            <version>2.33.5</version>-->
-<!--            <scope>compile</scope>-->
+<!--           <scope>compile</scope>-->
 <!--        </dependency>-->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.6.0</version>
+        </dependency>
 
+<!--        SharePoint Graph API-->
         <dependency>
             <groupId>com.microsoft.graph</groupId>
             <artifactId>microsoft-graph</artifactId>
@@ -86,7 +93,7 @@
             <version>5.16.0</version>
         </dependency>
 
-        <!-- Optional: Lombok for cleaner code -->
+        <!-- Utility: Lombok for cleaner code -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -119,6 +126,8 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+
+<!--        Tests-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -143,6 +152,38 @@
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>5.12.0</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- 1. Google Drive API Service -->
+        <!-- Contains the Drive.java service and models like File, FileList -->
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-drive</artifactId>
+            <version>v3-rev197-1.25.0</version>
+        </dependency>
+
+        <!-- 2. Core Google API Client -->
+        <!-- Provides fundamental classes for API interactions (e.g., transport, credentials) -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>${google.api.client.version}</version>
+        </dependency>
+
+        <!-- 3. Google OAuth Client (needed for GoogleCredential) -->
+        <!-- Contains classes for OAuth 2.0 flows, including loading credentials from file -->
+        <dependency>
+            <groupId>com.google.oauth-client</groupId>
+            <artifactId>google-oauth-client</artifactId>
+            <version>1.39.0</version>
+        </dependency>
+
+        <!-- 4. Gson JSON Factory -->
+        <!-- Used explicitly in the Java code via GsonFactory.getDefaultInstance() -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client-gson</artifactId>
+            <version>${google.api.client.version}</version>
         </dependency>
 
     </dependencies>

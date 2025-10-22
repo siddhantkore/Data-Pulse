@@ -1,9 +1,11 @@
 package com.example.elastic.model;
 
+import com.example.elastic.model.enums.DocumentStatus;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -36,4 +38,23 @@ public class DocumentMetadata {
 
     }
 
+//    private List<String> labels;  to take manual labels from user
+
+    private DocumentStatus documentStatus;
+
+//    private String hashsha256;
+
+//    private Map<String, String> history; // Map<user, action>
+
+    private LocalDateTime createdAtLocalDateTime = LocalDateTime.now();
+
+    private LocalDateTime updatedAtLocalDateTime;
+
 }
+
+/**
+ * fields to be included
+ * hash sha256 for duplicate identification
+ * access and update history for tracking
+ *
+ */

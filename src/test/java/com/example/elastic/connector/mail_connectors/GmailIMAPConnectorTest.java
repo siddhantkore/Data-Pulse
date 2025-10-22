@@ -1,28 +1,39 @@
 package com.example.elastic.connector.mail_connectors;
 
 import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
+import com.example.elastic.service.DocumentProcessorService;
+import jakarta.mail.*;
+import jakarta.mail.internet.MimeBodyPart;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
-import jakarta.mail.*;
-import jakarta.mail.internet.MimeBodyPart;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class GmailIMAPConnectorTest {
 
-    // Using @Mock to create mock objects for the Jakarta Mail API
+    // Mock Jakarta Mail objects
     @Mock
     private Session mockSession;
     @Mock
@@ -35,97 +46,112 @@ public class GmailIMAPConnectorTest {
     private Multipart mockMultipart;
     @Mock
     private MimeBodyPart mockAttachmentPart;
+    @Mock
+    private DocumentProcessorService mockDocumentProcessorService;
 
-    // The class under test. Mockito will automatically inject the mocks above
-    // into the connector's constructor.
+    // Inject mocks into GmailIMAPConnector
     @InjectMocks
-    private GmailIMAPConnector connector;
-
-    private static final String MOCK_USERNAME = "testuser@gmail.com";
-    private static final String MOCK_PASSWORD = "testpassword";
+    private GmailIMAPConnector connector = new GmailIMAPConnector("testuser@gmail.com", "testpassword");
 
     @BeforeEach
-    public void setUp() {
-        // Mockito will automatically instantiate 'connector' and inject the @Mock fields.
-        // No manual instantiation is needed here.
+    public void setUp() throws Exception {
+        // Replace default service with mocked one
+        connector = spy(new GmailIMAPConnector("testuser@gmail.com", "testpassword"));
+        connector = Mockito.mock(GmailIMAPConnector.class, CALLS_REAL_METHODS);
+        connector = new GmailIMAPConnector("testuser@gmail.com", "testpassword");
+        connector = spy(connector);
+
+        // Inject mocked DocumentProcessorService
+        var field = GmailIMAPConnector.class.getDeclaredField("documentProcessorService");
+        field.setAccessible(true);
+        field.set(connector, mockDocumentProcessorService);
     }
 
     @Test
     public void testFetchAttachments_Success() throws Exception {
-        // Use a try-with-resources block for static mocks to ensure proper cleanup.
-        try (MockedStatic<Session> sessionMockedStatic = Mockito.mockStatic(Session.class)) {
-            // Mock the static Session.getInstance method
-            sessionMockedStatic.when(() -> Session.getInstance(Mockito.any(), Mockito.any())).thenReturn(mockSession);
+        // Mock Session.getInstance behavior
+        doReturn(mockSession).when(connector).createSession();
+        doReturn(mockStore).when(connector).createStore(mockSession);
+        doReturn(mockFolder).when(connector).getInbox(mockStore);
 
-            // Define the behavior of our mock objects to simulate a successful connection
-            Mockito.when(mockSession.getStore("imaps")).thenReturn(mockStore);
-            Mockito.when(mockStore.getFolder("INBOX")).thenReturn(mockFolder);
+        // Mock IMAP store connection
+        doNothing().when(mockStore).connect(anyString(), anyString(), anyString());
+        doNothing().when(mockFolder).open(Folder.READ_ONLY);
 
-            // Mock the message content to contain a single multipart message with an attachment
-            Mockito.when(mockFolder.getMessages()).thenReturn(new Message[]{mockMessage});
-            Mockito.when(mockMessage.getContent()).thenReturn(mockMultipart);
-            Mockito.when(mockMultipart.getCount()).thenReturn(1);
-            Mockito.when(mockMultipart.getBodyPart(0)).thenReturn(mockAttachmentPart);
+        // Prepare fake message with one attachment
+        when(mockFolder.search(any())).thenReturn(new Message[]{mockMessage});
+        when(mockMessage.getContent()).thenReturn(mockMultipart);
+        when(mockMultipart.getCount()).thenReturn(1);
+        when(mockMultipart.getBodyPart(0)).thenReturn(mockAttachmentPart);
 
-            // Mock the attachment's properties
-            Mockito.when(mockAttachmentPart.getDisposition()).thenReturn(Part.ATTACHMENT);
-            Mockito.when(mockAttachmentPart.getFileName()).thenReturn("test_attachment.txt");
+        when(mockAttachmentPart.getDisposition()).thenReturn(Part.ATTACHMENT);
+        when(mockAttachmentPart.getFileName()).thenReturn("test_attachment.txt");
+        when(mockAttachmentPart.getContentType()).thenReturn("text/plain");
 
-            // Prepare mock file content
-            String fileContent = "This is a mock attachment.";
-            InputStream mockInputStream = new ByteArrayInputStream(fileContent.getBytes());
-            Mockito.when(mockAttachmentPart.getInputStream()).thenReturn(mockInputStream);
+        // Prepare mock content stream
+        String fileContent = "This is a mock attachment.";
+        InputStream mockInputStream = new ByteArrayInputStream(fileContent.getBytes());
+        when(mockAttachmentPart.getInputStream()).thenReturn(mockInputStream);
 
-            // Test a successful scenario where an email has one attachment.
-            List<File> attachments = connector.fetchAttachments();
+        // Call method
+        List<MultipartFile> attachments = connector.fetchAttachments();
 
-            // Verify that the attachment list is not empty and contains one file.
-            assertNotNull(attachments);
-            assertEquals(1, attachments.size());
-
-            // Verify that the file object has the correct name.
-            File attachmentFile = attachments.get(0);
-            assertEquals("test_attachment.txt", attachmentFile.getName());
-        }
+        // Verify results
+        assertNotNull(attachments);
+        assertEquals(1, attachments.size());
+        MultipartFile multipartFile = attachments.get(0);
+        assertEquals("test_attachment.txt", multipartFile.getOriginalFilename());
+        assertEquals("text/plain", multipartFile.getContentType());
+        assertArrayEquals(fileContent.getBytes(), multipartFile.getBytes());
     }
 
     @Test
     public void testFetchAttachments_NoAttachments() throws Exception {
-        // Use a try-with-resources block for static mocks to ensure proper cleanup.
-        try (MockedStatic<Session> sessionMockedStatic = Mockito.mockStatic(Session.class)) {
-            sessionMockedStatic.when(() -> Session.getInstance(Mockito.any(), Mockito.any())).thenReturn(mockSession);
-            Mockito.when(mockSession.getStore("imaps")).thenReturn(mockStore);
-            Mockito.when(mockStore.getFolder("INBOX")).thenReturn(mockFolder);
+        doReturn(mockSession).when(connector).createSession();
+        doReturn(mockStore).when(connector).createStore(mockSession);
+        doReturn(mockFolder).when(connector).getInbox(mockStore);
+        doNothing().when(mockStore).connect(anyString(), anyString(), anyString());
+        doNothing().when(mockFolder).open(Folder.READ_ONLY);
 
-            // Mock the message content to contain no attachments
-            Mockito.when(mockFolder.getMessages()).thenReturn(new Message[]{mockMessage});
-            Mockito.when(mockMessage.getContent()).thenReturn(mockMultipart);
-            Mockito.when(mockMultipart.getCount()).thenReturn(0);
+        // Message exists but has no attachments
+        when(mockFolder.search(any())).thenReturn(new Message[]{mockMessage});
+        when(mockMessage.getContent()).thenReturn(mockMultipart);
+        when(mockMultipart.getCount()).thenReturn(0);
 
-            List<File> attachments = connector.fetchAttachments();
+        List<MultipartFile> attachments = connector.fetchAttachments();
 
-            // Verify that the returned list is empty.
-            assertNotNull(attachments);
-            assertTrue(attachments.isEmpty());
-        }
+        assertNotNull(attachments);
+        assertTrue(attachments.isEmpty());
     }
 
     @Test
     public void testFetchAttachments_ConnectionFailure() throws Exception {
-        try (MockedStatic<Session> sessionMockedStatic = Mockito.mockStatic(Session.class)) {
-            sessionMockedStatic.when(() -> Session.getInstance(Mockito.any(), Mockito.any()))
-                    .thenReturn(mockSession);
-            Mockito.when(mockSession.getStore("imaps")).thenReturn(mockStore);
+        // Simulate Session and Store creation
+        doReturn(mockSession).when(connector).createSession();
+        doReturn(mockStore).when(connector).createStore(mockSession);
 
-            // Match the exact signature and allow nulls
-            Mockito.doThrow(new AuthenticationFailedException("Connection failed"))
-                    .when(mockStore)
-                    .connect(Mockito.eq("imap.gmail.com"),
-                            Mockito.nullable(String.class),
-                            Mockito.nullable(String.class));
+        // Throw an exception when connecting
+        doThrow(new AuthenticationFailedException("Connection failed"))
+                .when(mockStore).connect(anyString(), anyString(), anyString());
 
-            assertThrows(AuthenticationFailedException.class, () -> connector.fetchAttachments());
-        }
+        // Expect method to handle the exception and return an empty list
+        List<MultipartFile> result = connector.fetchAttachments();
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
+    @Test
+    public void testSendToDocumentService_CallsProcessorService() throws Exception {
+        // Prepare mock file
+        MultipartFile mockFile = mock(MultipartFile.class);
+        doReturn(List.of(mockFile)).when(connector).fetchAttachments();
+
+        // Execute
+        boolean result = connector.sendToDocumentService();
+
+        // Verify processing
+        verify(mockDocumentProcessorService, times(1)).processAndStore(mockFile);
+        assertTrue(result);
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.elastic.service;
 
 import com.example.elastic.model.DocumentMetadata;
+import com.example.elastic.model.enums.DocumentStatus;
 import com.example.elastic.repository.DocumentMongoRepository;
 import com.example.elastic.repository.DocumentSearchRepository;
 import com.example.elastic.service.llm.LLMService;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.sourceforge.tess4j.Tesseract;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,22 +20,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * This will be the service working after pulling doc from queue
+ *
+ */
 @Service
-public class DocumentService {
+public class DocumentProcessorService {
 
     private final DocumentMongoRepository documentMongoRepository;
     private final DocumentSearchRepository searchRepository;
     private final LLMService llmService;
+    private final String tesseractDataPath;
 
     private final ObjectMapper mapper;
 //    private final S3Client s3Client;
 //    private final String bucket;
 //    private final String region;
 
-    public DocumentService(
+    public DocumentProcessorService(
             DocumentMongoRepository documentMongoRepository,
             DocumentSearchRepository searchRepository,
-            LLMService llmService, ObjectMapper objectMapper
+            LLMService llmService, ObjectMapper objectMapper,
+            @Value("${tesseract.datapath}") String tesseractDataPath
 //            @Value("${s3.endpoint}") String endpoint,
 //            @Value("${s3.access-key}") String accessKey,
 //            @Value("${s3.secret-key}") String secretKey,
@@ -44,6 +52,7 @@ public class DocumentService {
         this.searchRepository = searchRepository;
         this.llmService = llmService;
         this.mapper = objectMapper;
+        this.tesseractDataPath = tesseractDataPath;
 //        this.bucket = bucket;
 //
 //        this.s3Client = S3Client.builder()
@@ -52,7 +61,7 @@ public class DocumentService {
 //                .credentialsProvider(StaticCredentialsProvider.create(
 //                        AwsBasicCredentials.create(accessKey, secretKey)))
 //                .serviceConfiguration(S3Configuration.builder()
-//                        .pathStyleAccessEnabled(true)  // 👈 important for MinIO in Docker
+//                        .pathStyleAccessEnabled(true)  // important for MinIO in Docker
 //                        .build())
 //                .build();
 //        this.region = region;
@@ -88,6 +97,7 @@ public class DocumentService {
         DocumentMetadata documentMetadata = new DocumentMetadata();
         try {
             String key = UUID.randomUUID() + "-" + file.getOriginalFilename();
+            documentMetadata.setDocumentStatus(DocumentStatus.PULLED);
 
             // 1. Upload file to MinIO
 //        s3Client.putObject(PutObjectRequest.builder()
@@ -103,7 +113,7 @@ public class DocumentService {
             // 3. Extract text using Tesseract
             System.out.println("1");
             Tesseract tesseract = new Tesseract();
-            tesseract.setDatapath("/usr/share/tesseract-ocr/5/tessdata");
+            tesseract.setDatapath(tesseractDataPath);
             tesseract.setLanguage("eng");
             tesseract.setOcrEngineMode(1); // LSTM
             tesseract.setPageSegMode(6);
@@ -150,8 +160,8 @@ public class DocumentService {
 
 
             // 5. Index in Elasticsearch
-            System.out.println("Going to save in Elastic");
-            searchRepository.save(metadata);
+//            System.out.println("Going to save in Elastic");
+//            searchRepository.save(metadata);
 
             // Cleanup
             Files.deleteIfExists(tempFile.toPath());

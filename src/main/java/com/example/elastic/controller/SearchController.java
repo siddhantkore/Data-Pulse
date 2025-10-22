@@ -2,7 +2,7 @@ package com.example.elastic.controller;
 
 import com.example.elastic.model.DocumentMetadata;
 import com.example.elastic.service.ElasticSearchService;
-import com.example.elastic.service.MongoSearchSearvice;
+import com.example.elastic.service.MongoSearchService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +19,9 @@ public class SearchController {
     // Adapt the searchController to use DocumentMongoRepository instead of ElasticSearch repository
 
     private final ElasticSearchService elasticSearchService;
-    private final MongoSearchSearvice mongoSearchSearvice;
+    private final MongoSearchService mongoSearchSearvice;
 
-    public SearchController(ElasticSearchService elasticSearchService, MongoSearchSearvice mongoSearchSearvice) {
+    public SearchController(ElasticSearchService elasticSearchService, MongoSearchService mongoSearchSearvice) {
         this.elasticSearchService = elasticSearchService;
         this.mongoSearchSearvice = mongoSearchSearvice;
     }
@@ -55,10 +55,10 @@ public class SearchController {
 
     /**
      *
-     * @return List of DocumentMetadata result of search by file
+     * @return List of DocumentMetadata
      */
     @GetMapping("/get-all-docs")
-    public ResponseEntity<List<DocumentMetadata>> searchByFileName() {
+    public ResponseEntity<List<DocumentMetadata>> getAllDocs() {
         List<DocumentMetadata> results = mongoSearchSearvice.getAllDocuments();
         return ResponseEntity.ok(results);
     }

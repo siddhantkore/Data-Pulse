@@ -7,11 +7,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class MongoSearchSearvice {
+public class MongoSearchService {
 
     private final DocumentMongoRepository documentMongoRepository;
 
-    public MongoSearchSearvice(DocumentMongoRepository documentMongoRepository) {
+    public MongoSearchService(DocumentMongoRepository documentMongoRepository) {
         this.documentMongoRepository = documentMongoRepository;
     }
 

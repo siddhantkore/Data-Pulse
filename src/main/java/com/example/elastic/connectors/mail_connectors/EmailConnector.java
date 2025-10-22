@@ -1,5 +1,7 @@
 package com.example.elastic.connectors.mail_connectors;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.util.List;
 
@@ -10,5 +12,5 @@ public interface EmailConnector {
      * @return Currently :- List of Files
      * @throws Exception if fetching fails
      */
-    List<File> fetchAttachments() throws Exception;
+    List<MultipartFile> fetchAttachments() throws Exception;
 }

@@ -1,0 +1,72 @@
+# spring-boot
+server.port=8080
+spring.application.name=elastic
+spring.servlet.multipart.max-file-size=10MB
+
+
+# ElasticSearch
+spring.data.elasticsearch.cluster-name=my-doc-application
+spring.data.elasticsearch.node-name=node-1
+spring.elasticsearch.uris=http://localhost:9200
+
+
+#MongoDB
+spring.data.mongodb.uri=mongodb://localhost:27017/documentsdb
+spring.data.mongodb.host=localhost
+spring.data.mongodb.port=27017
+spring.data.mongodb.database=documentsdb
+
+
+# AWS S3
+s3.endpoint=
+s3.bucket=your-bucket
+s3.access-key=your_access_key
+s3.secret-key=your_secret_key
+s3.region=
+
+spring.main.allow-bean-definition-overriding=true
+
+
+# Tesseract OCR
+# For Linux
+tesseract.datapath=/usr/share/tesseract-ocr/5/tessdata
+
+
+# LLM API Keys
+
+# OPENAI
+openai.api.key=
+openai.api.url=https://api.openai.com/v1/chat/completions
+openai.model=
+
+
+# GEMINI
+gemini.api.key=
+gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
+
+
+# Mail Config
+spring.mail.host=imap.gmail.com
+spring.mail.port=993
+spring.mail.username=
+spring.mail.password=
+spring.mail.store.protocol=imaps
+spring.mail.properties.mail.imaps.ssl.enable=true
+spring.mail.properties.mail.debug=true
+
+
+# Microsoft Sharepoint
+sharepoint.site.id=
+sharepoint.drive.id=
+
+
+# Kafka Configuration
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.consumer.group-id=
+spring.kafka.consumer.auto-offset-reset=earliest
+spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.value-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.properties.spring.json.trusted.packages=*
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer
+
