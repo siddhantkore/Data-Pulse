@@ -2,6 +2,8 @@ package com.example.elastic.service;
 
 import com.example.elastic.model.DocumentMetadata;
 import com.example.elastic.repository.DocumentMongoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,9 +17,9 @@ public class MongoSearchService {
         this.documentMongoRepository = documentMongoRepository;
     }
 
-    public List<DocumentMetadata> getAllDocuments(){
+    public Page<DocumentMetadata> getAllDocuments(Pageable pageable){
         try {
-            return documentMongoRepository.findAll();
+            return documentMongoRepository.findAll(pageable);
         } catch (Exception e) {
             e.printStackTrace();
         }

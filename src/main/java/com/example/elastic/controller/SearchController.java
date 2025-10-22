@@ -1,8 +1,13 @@
 package com.example.elastic.controller;
 
 import com.example.elastic.model.DocumentMetadata;
+import com.example.elastic.repository.DocumentMongoRepository;
 import com.example.elastic.service.ElasticSearchService;
 import com.example.elastic.service.MongoSearchService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,15 +25,17 @@ public class SearchController {
 
     private final ElasticSearchService elasticSearchService;
     private final MongoSearchService mongoSearchSearvice;
+    private final DocumentMongoRepository documentMongoRepository;
 
-    public SearchController(ElasticSearchService elasticSearchService, MongoSearchService mongoSearchSearvice) {
+    public SearchController(ElasticSearchService elasticSearchService, MongoSearchService mongoSearchSearvice, DocumentMongoRepository documentMongoRepository) {
         this.elasticSearchService = elasticSearchService;
         this.mongoSearchSearvice = mongoSearchSearvice;
+        this.documentMongoRepository = documentMongoRepository;
     }
 
     /**
      *
-     * @param q text to search in elastic-search
+     * @param q text to search in mongodb
      * @return List of DocumentMetadata result of search
      */
     @GetMapping("/text-search")
@@ -42,6 +49,17 @@ public class SearchController {
         return null;
     }
 
+    @GetMapping("/getalldocs")
+    public PagedModel<DocumentMetadata> getPagedDocuments(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<DocumentMetadata> documentMetadataPage = mongoSearchSearvice.getAllDocuments(pageable);
+
+        return new PagedModel<>(documentMetadataPage);
+    }
+
     /**
      *
      * @param query text to search
@@ -53,13 +71,5 @@ public class SearchController {
         return ResponseEntity.ok(results);
     }
 
-    /**
-     *
-     * @return List of DocumentMetadata
-     */
-    @GetMapping("/get-all-docs")
-    public ResponseEntity<List<DocumentMetadata>> getAllDocs() {
-        List<DocumentMetadata> results = mongoSearchSearvice.getAllDocuments();
-        return ResponseEntity.ok(results);
-    }
+
 }

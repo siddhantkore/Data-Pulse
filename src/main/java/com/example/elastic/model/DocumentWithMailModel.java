@@ -19,12 +19,12 @@ public class DocumentWithMailModel {
     private LocalDateTime sentOn;
     private boolean haveAttachment;
     /*{
-        email_id: <unique_message_id_or_uid>
-        String subject: Invoice for March 2025
-        Map<String, String> from
+        private String email_id: <unique_message_id_or_uid>
+        private String subject: Invoice for March 2025
+        private Map<String, String> from
               name -> ABC Corp
               email -> accounts@abccorp.com
-        to: [{"name": "Tom Hagen", "email": "tom@nivalcloud.com"}],
+        private to: [{"name": "Tom Hagen", "email": "tom@nivalcloud.com"}],
         LocalDateTime received_at;
 
         DocumentMetadata document metadata;
@@ -32,7 +32,7 @@ public class DocumentWithMailModel {
         int attachment_count;
         enum priority;
         boolean is_read;
-        labels": ["Finance", "Invoices"]
+        List<String> labels": ["Finance", "Invoices"]
 
     }*/
 }

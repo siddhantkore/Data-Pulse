@@ -1,7 +1,7 @@
 package com.example.elastic.service;
 
 import com.example.elastic.model.DocumentMetadata;
-import com.example.elastic.model.enums.DocumentStatus;
+//import com.example.elastic.model.enums.DocumentStatus;
 import com.example.elastic.repository.DocumentMongoRepository;
 import com.example.elastic.repository.DocumentSearchRepository;
 import com.example.elastic.service.llm.LLMService;
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.sourceforge.tess4j.Tesseract;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,10 +38,12 @@ public class DocumentProcessorService {
 //    private final String bucket;
 //    private final String region;
 
+    @Autowired
     public DocumentProcessorService(
             DocumentMongoRepository documentMongoRepository,
             DocumentSearchRepository searchRepository,
-            LLMService llmService, ObjectMapper objectMapper,
+            LLMService llmService,
+            ObjectMapper objectMapper,
             @Value("${tesseract.datapath}") String tesseractDataPath
 //            @Value("${s3.endpoint}") String endpoint,
 //            @Value("${s3.access-key}") String accessKey,
@@ -97,7 +100,7 @@ public class DocumentProcessorService {
         DocumentMetadata documentMetadata = new DocumentMetadata();
         try {
             String key = UUID.randomUUID() + "-" + file.getOriginalFilename();
-            documentMetadata.setDocumentStatus(DocumentStatus.PULLED);
+//            documentMetadata.setDocumentStatus(DocumentStatus.PULLED);
 
             // 1. Upload file to MinIO
 //        s3Client.putObject(PutObjectRequest.builder()
