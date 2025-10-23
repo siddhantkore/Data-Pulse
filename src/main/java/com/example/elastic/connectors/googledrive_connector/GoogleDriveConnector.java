@@ -7,8 +7,8 @@
 //import com.google.api.client.json.gson.GsonFactory;
 //import com.google.api.services.drive.Drive;
 //import com.google.api.services.drive.DriveScopes;
-//import com.google.api.services.drive.model.File;
-//import com.google.api.services.drive.model.FileList;
+//import com.google.api.services.drive.models.File;
+//import com.google.api.services.drive.models.FileList;
 //import org.springframework.stereotype.Service;
 //
 //import java.io.FileOutputStream;
@@ -24,11 +24,11 @@
 //    private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 //    private static final NetHttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 //
-//    // The Drive service instance used for all API calls
+//    // The Drive services instance used for all API calls
 //    private final Drive driveService;
 //
 //    /**
-//     * Initializes the DriveDocumentPuller by creating the authorized Drive service.
+//     * Initializes the DriveDocumentPuller by creating the authorized Drive services.
 //     * @param credentialsPath The path to your Google Service Account JSON key file.
 //     * @throws IOException If the credentials file cannot be loaded or authentication fails.
 //     */
@@ -38,18 +38,18 @@
 //    }
 //
 //    /**
-//     * Authorizes and creates the Google Drive API client service.
+//     * Authorizes and creates the Google Drive API client services.
 //     * For simplicity, this example uses a Service Account flow.
 //     *
 //     * @param credentialsPath The path to the Service Account JSON key file.
-//     * @return An authorized Drive service instance.
+//     * @return An authorized Drive services instance.
 //     * @throws IOException
 //     */
 //    private Drive getDriveService(String credentialsPath) throws IOException {
 //        // Define the scope: read-only access to files, for secure file pulling.
 //        List<String> scopes = Collections.singletonList(DriveScopes.DRIVE_FILE);
 //
-//        // Load credentials from the service account JSON key file
+//        // Load credentials from the services account JSON key file
 //        InputStream in = GoogleDriveConnector.class.getResourceAsStream(credentialsPath);
 //        if (in == null) {
 //            // Fallback for direct file path if running outside a JAR/classpath
@@ -63,7 +63,7 @@
 //        Credential credential = GoogleCredential.fromStream(in)
 //                .createScoped(scopes);
 //
-//        // Build the Drive service
+//        // Build the Drive services
 //        return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
 //                .setApplicationName(APPLICATION_NAME)
 //                .build();
@@ -129,7 +129,7 @@
 ////        // --- START CONFIGURATION ---
 ////        // REPLACE THIS WITH THE ACTUAL PATH TO YOUR SERVICE ACCOUNT JSON KEY FILE.
 ////        // For local testing, ensure your key file is accessible.
-////        final String CREDENTIALS_FILE_PATH = "path/to/your/service-account-key.json";
+////        final String CREDENTIALS_FILE_PATH = "path/to/your/services-account-key.json";
 ////        final String DOWNLOAD_FOLDER = "./downloads/"; // Create this folder for output
 ////
 ////        // This query finds all non-trash PDF files.
@@ -137,7 +137,7 @@
 ////        // --- END CONFIGURATION ---
 ////
 ////        try {
-////            // 1. Initialize the puller service
+////            // 1. Initialize the puller services
 ////            GoogleDriveConnector puller = new GoogleDriveConnector(CREDENTIALS_FILE_PATH);
 ////
 ////            // Ensure the download directory exists

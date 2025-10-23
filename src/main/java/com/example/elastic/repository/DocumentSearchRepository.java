@@ -1,6 +1,6 @@
 //package com.example.elastic.repository;
 //
-//import com.example.elastic.model.DocumentMetadata;
+//import com.example.elastic.models.DocumentMetadata;
 //import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 //import org.springframework.stereotype.Repository;
 //

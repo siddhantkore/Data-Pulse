@@ -1,8 +1,8 @@
-package com.example.elastic.controller;
+package com.example.elastic.controllers;
 
 import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
-import com.example.elastic.model.DocumentMetadata;
-import com.example.elastic.service.DocumentProcessorService;
+import com.example.elastic.models.DocumentMetadata;
+import com.example.elastic.services.DocumentProcessorService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -33,7 +33,7 @@ public class DocumentController {
     /**
      * @route /api/documents/upload
      * @param file take Multipart file as input
-     * @return model DocumentMetadata after successfully processing & saving it
+     * @return models DocumentMetadata after successfully processing & saving it
      * Calls processAndStore in DocumentService
      */
     @PostMapping("/upload")

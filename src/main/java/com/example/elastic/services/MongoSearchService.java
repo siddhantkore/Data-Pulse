@@ -1,6 +1,6 @@
-package com.example.elastic.service;
+package com.example.elastic.services;
 
-import com.example.elastic.model.DocumentMetadata;
+import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.repository.DocumentMongoRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -155,7 +155,7 @@
         </dependency>
 
         <!-- 1. Google Drive API Service -->
-        <!-- Contains the Drive.java service and models like File, FileList -->
+        <!-- Contains the Drive.java services and models like File, FileList -->
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-drive</artifactId>

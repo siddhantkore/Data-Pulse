@@ -1,10 +1,10 @@
-package com.example.elastic.service;
+package com.example.elastic.services;
 
-import com.example.elastic.model.DocumentMetadata;
-import com.example.elastic.model.enums.DocumentStatus;
+import com.example.elastic.models.DocumentMetadata;
+import com.example.elastic.models.enums.DocumentStatus;
 import com.example.elastic.repository.DocumentMongoRepository;
 //import com.example.elastic.repository.DocumentSearchRepository;
-import com.example.elastic.service.llm.LLMService;
+import com.example.elastic.services.llm.LLMService;
 import com.example.elastic.utils.hashing.GenerateHash;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * This will be the service working after pulling doc from queue
+ * This will be the services working after pulling doc from queue
  *
  */
 @Service

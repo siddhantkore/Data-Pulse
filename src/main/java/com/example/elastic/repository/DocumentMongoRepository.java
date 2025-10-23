@@ -1,6 +1,6 @@
 package com.example.elastic.repository;
 
-import com.example.elastic.model.DocumentMetadata;
+import com.example.elastic.models.DocumentMetadata;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

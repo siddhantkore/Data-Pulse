@@ -1,7 +1,7 @@
 package com.example.elastic.connectors.mail_connectors;
 
 import com.example.elastic.sandbox.Sandbox;
-import com.example.elastic.service.DocumentProcessorService;
+import com.example.elastic.services.DocumentProcessorService;
 import com.example.elastic.utils.InMemoryMultipartFile;
 
 import jakarta.mail.Multipart;
@@ -167,7 +167,7 @@ public class GmailIMAPConnector implements EmailConnector {
      * Converts File into MultipartFile by using Anonymous class
      * Calls to @fetchAttachments Method
      * Enhancement: Remove It
-     * @return It's not permanent implementation as of now return bool for easy API access in controller
+     * @return It's not permanent implementation as of now return bool for easy API access in controllers
      * Sends attachments directly to DocumentProcessorService.
      */
     public boolean sendToDocumentService() {
@@ -178,7 +178,7 @@ public class GmailIMAPConnector implements EmailConnector {
             }
             return true;
         } catch (Exception e) {
-            logger.error("Error sending attachments to document service: {}", e.getMessage(), e);
+            logger.error("Error sending attachments to document services: {}", e.getMessage(), e);
             return false;
         }
     }

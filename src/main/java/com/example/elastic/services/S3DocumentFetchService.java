@@ -1,4 +1,4 @@
-//package com.example.elastic.service;
+//package com.example.elastic.services;
 //
 //import io.minio.GetObjectResponse;
 //import io.minio.MinioClient;

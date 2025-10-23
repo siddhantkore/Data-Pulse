@@ -1,7 +1,7 @@
 package com.example.elastic.connector.mail_connectors;
 
 import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
-import com.example.elastic.service.DocumentProcessorService;
+import com.example.elastic.services.DocumentProcessorService;
 import jakarta.mail.*;
 import jakarta.mail.internet.MimeBodyPart;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +55,7 @@ public class GmailIMAPConnectorTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        // Replace default service with mocked one
+        // Replace default services with mocked one
         connector = spy(new GmailIMAPConnector("testuser@gmail.com", "testpassword"));
         connector = Mockito.mock(GmailIMAPConnector.class, CALLS_REAL_METHODS);
         connector = new GmailIMAPConnector("testuser@gmail.com", "testpassword");

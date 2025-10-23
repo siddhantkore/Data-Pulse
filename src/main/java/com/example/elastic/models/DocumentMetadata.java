@@ -1,6 +1,6 @@
-package com.example.elastic.model;
+package com.example.elastic.models;
 
-import com.example.elastic.model.enums.DocumentStatus;
+import com.example.elastic.models.enums.DocumentStatus;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;

@@ -1,8 +1,8 @@
-package com.example.elastic.controller;
+package com.example.elastic.controllers;
 
-import com.example.elastic.model.DocumentMetadata;
-import com.example.elastic.service.ElasticSearchService;
-import com.example.elastic.service.MongoSearchService;
+import com.example.elastic.models.DocumentMetadata;
+import com.example.elastic.services.ElasticSearchService;
+import com.example.elastic.services.MongoSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

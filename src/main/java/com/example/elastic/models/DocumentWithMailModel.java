@@ -1,4 +1,4 @@
-package com.example.elastic.model;
+package com.example.elastic.models;
 
 import lombok.Getter;
 import lombok.NonNull;

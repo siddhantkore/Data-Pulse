@@ -4,8 +4,8 @@
 ### Functional Requirements
 
 - [x] Ingestion and Data Normalization
-- [] Document Summarization
-- [] Entity & Keyword Extraction
+- [x] Document Summarization
+- [x] Entity & Keyword Extraction
 - [] Content Routing & Personalization
 - [] Information Retrieval & Traceability
 - [] Real-time Alerts & Notifications

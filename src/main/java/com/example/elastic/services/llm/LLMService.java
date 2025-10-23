@@ -1,4 +1,4 @@
-package com.example.elastic.service.llm;
+package com.example.elastic.services.llm;
 
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -27,7 +27,7 @@ public class LLMService {
     private OkHttpClient client = new OkHttpClient();
 
     public LLMService (@Value("${openai.api.key}") String openApiKey,
-                       @Value("${openai.model}") String model,
+                       @Value("${openai.models}") String model,
                        @Value("${gemini.api.key}") String geminiApiKey) {
 
         this.OpenApiKey = openApiKey;
@@ -93,7 +93,7 @@ public class LLMService {
         prompt = prompt + extractedText;
 
         JSONObject requestBody = new JSONObject()
-                .put("model", model) // choose your model
+                .put("models", model) // choose your models
                 .put("messages", new org.json.JSONArray()
                         .put(new JSONObject()
                                 .put("role", "system")

@@ -1,4 +1,4 @@
-package com.example.elastic.model.enums;
+package com.example.elastic.models.enums;
 
 
 import lombok.Getter;
