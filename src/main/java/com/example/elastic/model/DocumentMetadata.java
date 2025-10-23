@@ -1,6 +1,6 @@
 package com.example.elastic.model;
 
-//import com.example.elastic.model.enums.DocumentStatus;
+import com.example.elastic.model.enums.DocumentStatus;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -40,7 +40,7 @@ public class DocumentMetadata {
 
 //    private List<String> labels;  to take manual labels from user
 
-//    private DocumentStatus documentStatus;
+    private DocumentStatus documentStatus;
 
 //    private String hashsha256;
 

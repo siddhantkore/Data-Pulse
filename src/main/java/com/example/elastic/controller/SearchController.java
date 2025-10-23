@@ -1,9 +1,9 @@
 package com.example.elastic.controller;
 
 import com.example.elastic.model.DocumentMetadata;
-import com.example.elastic.repository.DocumentMongoRepository;
 import com.example.elastic.service.ElasticSearchService;
 import com.example.elastic.service.MongoSearchService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/search")
 @CrossOrigin(origins = "*")
@@ -24,14 +25,7 @@ public class SearchController {
     // Adapt the searchController to use DocumentMongoRepository instead of ElasticSearch repository
 
     private final ElasticSearchService elasticSearchService;
-    private final MongoSearchService mongoSearchSearvice;
-    private final DocumentMongoRepository documentMongoRepository;
-
-    public SearchController(ElasticSearchService elasticSearchService, MongoSearchService mongoSearchSearvice, DocumentMongoRepository documentMongoRepository) {
-        this.elasticSearchService = elasticSearchService;
-        this.mongoSearchSearvice = mongoSearchSearvice;
-        this.documentMongoRepository = documentMongoRepository;
-    }
+    private final MongoSearchService mongoSearchService;
 
     /**
      *
@@ -41,7 +35,7 @@ public class SearchController {
     @GetMapping("/text-search")
     public ResponseEntity<List<DocumentMetadata>> search(@RequestParam String q) {
         try {
-            List<DocumentMetadata> results =  mongoSearchSearvice.findText(q);
+            List<DocumentMetadata> results =  mongoSearchService.findText(q);
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
@@ -49,13 +43,19 @@ public class SearchController {
         return null;
     }
 
+    /**
+     *
+     * @param page number to see, default 0
+     * @param size of records on each page, default 20 records/page
+     * @return pages of DocumentMetadata
+     */
     @GetMapping("/getalldocs")
     public PagedModel<DocumentMetadata> getPagedDocuments(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<DocumentMetadata> documentMetadataPage = mongoSearchSearvice.getAllDocuments(pageable);
+        Page<DocumentMetadata> documentMetadataPage = mongoSearchService.getAllDocuments(pageable);
 
         return new PagedModel<>(documentMetadataPage);
     }
@@ -65,6 +65,7 @@ public class SearchController {
      * @param query text to search
      * @return List of DocumentMetadata result of search
      */
+    @Deprecated
     @GetMapping("/text")
     public ResponseEntity<List<DocumentMetadata>> searchByText(@RequestParam("q") String query) {
         List<DocumentMetadata> results = elasticSearchService.searchByText(query);

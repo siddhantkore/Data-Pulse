@@ -1,10 +1,11 @@
 package com.example.elastic.service;
 
 import com.example.elastic.model.DocumentMetadata;
-//import com.example.elastic.model.enums.DocumentStatus;
+import com.example.elastic.model.enums.DocumentStatus;
 import com.example.elastic.repository.DocumentMongoRepository;
-import com.example.elastic.repository.DocumentSearchRepository;
+//import com.example.elastic.repository.DocumentSearchRepository;
 import com.example.elastic.service.llm.LLMService;
+import com.example.elastic.utils.hashing.GenerateHash;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,9 +30,11 @@ import java.util.UUID;
 public class DocumentProcessorService {
 
     private final DocumentMongoRepository documentMongoRepository;
-    private final DocumentSearchRepository searchRepository;
+//    private final DocumentSearchRepository searchRepository;
     private final LLMService llmService;
     private final String tesseractDataPath;
+    @Autowired
+    private GenerateHash generateHash;
 
     private final ObjectMapper mapper;
 //    private final S3Client s3Client;
@@ -41,7 +44,7 @@ public class DocumentProcessorService {
     @Autowired
     public DocumentProcessorService(
             DocumentMongoRepository documentMongoRepository,
-            DocumentSearchRepository searchRepository,
+//            DocumentSearchRepository searchRepository,
             LLMService llmService,
             ObjectMapper objectMapper,
             @Value("${tesseract.datapath}") String tesseractDataPath
@@ -52,7 +55,7 @@ public class DocumentProcessorService {
 //            @Value("${s3.bucket}") String bucket
     ) {
         this.documentMongoRepository = documentMongoRepository;
-        this.searchRepository = searchRepository;
+//        this.searchRepository = searchRepository;
         this.llmService = llmService;
         this.mapper = objectMapper;
         this.tesseractDataPath = tesseractDataPath;
@@ -100,7 +103,9 @@ public class DocumentProcessorService {
         DocumentMetadata documentMetadata = new DocumentMetadata();
         try {
             String key = UUID.randomUUID() + "-" + file.getOriginalFilename();
-//            documentMetadata.setDocumentStatus(DocumentStatus.PULLED);
+            documentMetadata.setDocumentStatus(DocumentStatus.PULLED);
+            String hash = generateHash.calculateSha256(file);
+            System.out.println(hash);
 
             // 1. Upload file to MinIO
 //        s3Client.putObject(PutObjectRequest.builder()
@@ -139,6 +144,8 @@ public class DocumentProcessorService {
                     .replaceAll("```", "")
                     .trim();
 
+            documentMetadata.setDocumentStatus(DocumentStatus.SUMMARIZED_OK);
+
 //        cleanUp to follow sanitization
 /*
         private String sanitizeLLMResponse(String llmResponse) {
@@ -157,9 +164,12 @@ public class DocumentProcessorService {
             System.out.println(metadata);
 
             documentMetadata = mapLLMResponseToModelClass(llmResponse, metadata);
+            documentMetadata.setDocumentStatus(DocumentStatus.PROCESSED_OK);
 
 //        documentMongoRepository.save(metadata);
+            documentMetadata.setDocumentStatus(DocumentStatus.SAVED_TO_DB);
             documentMongoRepository.save(documentMetadata);
+
 
 
             // 5. Index in Elasticsearch
@@ -170,11 +180,12 @@ public class DocumentProcessorService {
             Files.deleteIfExists(tempFile.toPath());
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
+            documentMetadata.setDocumentStatus(DocumentStatus.PARSING_FAILED);
         }
 
         return documentMetadata;
     }
-
+/////////////////////////////// Utility For Mapping Response to Entity
     private DocumentMetadata mapLLMResponseToModelClass(String llmResponse, DocumentMetadata metadata) throws JsonProcessingException {
 
         JsonNode root = mapper.readTree(llmResponse);
@@ -186,7 +197,7 @@ public class DocumentProcessorService {
                 mapper.convertValue(root.get("keywords"), new TypeReference<List<String>>() {})
         );
 
-// metadata object
+        // metadata object
         DocumentMetadata.Metadata meta = new DocumentMetadata.Metadata();
         meta.setTitle(root.path("metadata").path("title").asText());
         meta.setAuthorOrSender(root.path("metadata").path("author_or_sender").asText());
@@ -198,7 +209,7 @@ public class DocumentProcessorService {
 
         metadata.setMetadata(meta);
 
-// flexible fields
+        // flexible fields
         metadata.setDocumentSpecificFields(
                 mapper.convertValue(root.get("document_specific_fields"), new TypeReference<Map<String, Object>>() {})
         );

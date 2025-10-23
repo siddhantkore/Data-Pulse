@@ -1,7 +1,7 @@
 package com.example.elastic.service;
 
 import com.example.elastic.model.DocumentMetadata;
-import com.example.elastic.repository.DocumentSearchRepository;
+//import com.example.elastic.repository.DocumentSearchRepository;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -11,12 +11,12 @@ import java.util.List;
 
 @Service
 public class ElasticSearchService {
-    private final DocumentSearchRepository searchRepository;
+//    private final DocumentSearchRepository searchRepository;
 
     private final ElasticsearchOperations elasticsearchOperations;
 
-    public ElasticSearchService(DocumentSearchRepository searchRepository, ElasticsearchOperations elasticsearchOperations) {
-        this.searchRepository = searchRepository;
+    public ElasticSearchService(/*DocumentSearchRepository searchRepository,*/ ElasticsearchOperations elasticsearchOperations) {
+//        this.searchRepository = searchRepository;
         this.elasticsearchOperations = elasticsearchOperations;
     }
 
@@ -24,14 +24,14 @@ public class ElasticSearchService {
      * Search documents where extractedText contains the query string.
      */
     public List<DocumentMetadata> searchByText(String query) {
-        return searchRepository.findByExtractedTextContainingIgnoreCase(query);
+        return null; // searchRepository.findByExtractedTextContainingIgnoreCase(query);
     }
 
     /**
      * Search by file name.
      */
     public List<DocumentMetadata> searchByFileName(String fileName) {
-        return searchRepository.findByFileNameContainingIgnoreCase(fileName);
+        return null ; //searchRepository.findByFileNameContainingIgnoreCase(fileName);
     }
 
     /**

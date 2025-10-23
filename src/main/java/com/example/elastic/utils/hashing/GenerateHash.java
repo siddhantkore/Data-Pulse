@@ -10,7 +10,7 @@ import java.security.MessageDigest;
 public class GenerateHash {
 
     // Define a buffer size for efficient reading of large files
-    private static final int BUFFER_SIZE = 8192; // 8KB buffer
+    private final int BUFFER_SIZE = 8192; // 8KB buffer
 
     /**
      * Calculates the SHA-256 hash of a file's content.
@@ -18,7 +18,7 @@ public class GenerateHash {
      * @return The 64-character hexadecimal SHA-256 hash string.
      * @throws Exception If the file input stream cannot be read or the algorithm is unavailable.
      */
-    public static String calculateSha256(MultipartFile file) throws Exception {
+    public String calculateSha256(MultipartFile file) throws Exception {
 
         try (InputStream inputStream = file.getInputStream()) {
             //  Steps to get SHA-256 of bytes
