@@ -3,7 +3,6 @@ package com.example.elastic.services;
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.models.enums.DocumentStatus;
 import com.example.elastic.repository.DocumentMongoRepository;
-//import com.example.elastic.repository.DocumentSearchRepository;
 import com.example.elastic.services.llm.LLMService;
 import com.example.elastic.utils.hashing.GenerateHash;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,7 +54,6 @@ public class DocumentProcessorService {
 //            @Value("${s3.bucket}") String bucket
     ) {
         this.documentMongoRepository = documentMongoRepository;
-//        this.searchRepository = searchRepository;
         this.llmService = llmService;
         this.mapper = objectMapper;
         this.tesseractDataPath = tesseractDataPath;

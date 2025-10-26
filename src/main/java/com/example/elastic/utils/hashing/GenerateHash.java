@@ -1,10 +1,13 @@
 package com.example.elastic.utils.hashing;
 
+import com.example.elastic.exceptions.HashSha256Exception;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 @Component
 public class GenerateHash {
@@ -16,9 +19,8 @@ public class GenerateHash {
      * Calculates the SHA-256 hash of a file's content.
      * @param file The file (e.g., MultipartFile) to hash.
      * @return The 64-character hexadecimal SHA-256 hash string.
-     * @throws Exception If the file input stream cannot be read or the algorithm is unavailable.
      */
-    public String calculateSha256(MultipartFile file) throws Exception {
+    public String calculateSha256(MultipartFile file) throws HashSha256Exception {
 
         try (InputStream inputStream = file.getInputStream()) {
             //  Steps to get SHA-256 of bytes
@@ -39,6 +41,8 @@ public class GenerateHash {
 
             // 4. Convert the byte array to a hexadecimal string
             return bytesToHex(hashedBytes);
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new HashSha256Exception("An Exception occurred during hash generation "+e.getMessage());
         }
     }
 

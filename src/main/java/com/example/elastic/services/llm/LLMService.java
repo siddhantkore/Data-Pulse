@@ -1,5 +1,6 @@
 package com.example.elastic.services.llm;
 
+import com.example.elastic.exceptions.LLMServiceException;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -27,7 +28,7 @@ public class LLMService {
     private OkHttpClient client = new OkHttpClient();
 
     public LLMService (@Value("${openai.api.key}") String openApiKey,
-                       @Value("${openai.models}") String model,
+                       @Value("${openai.model}") String model,
                        @Value("${gemini.api.key}") String geminiApiKey) {
 
         this.OpenApiKey = openApiKey;
@@ -40,15 +41,15 @@ public class LLMService {
             "Your task is to analyze this text and return structured metadata that makes the document searchable.  \n" +
             "\n" +
             "### Instructions\n" +
-            "1. Identify the main **categories** or type of document (e.g., Invoice, Resume, Medical Report, HR Document, Legal Document, Research Paper, Email, etc.).  \n" +
-            "2. Extract 5–15 **keywords** that best describe the content of the document.  \n" +
-            "3. Provide **core metadata fields**, which should always include:  \n" +
+            "1. Identify the main categories or type of document (e.g., Invoice, Resume, Medical Report, HR Document, Legal Document, Research Paper, Email, etc.).  \n" +
+            "2. Extract 5–15 keywords that best describe the content of the document.  \n" +
+            "3. Provide core metadata fields, which should always include:  \n" +
             "   - Title or Subject (if identifiable)  \n" +
             "   - Author / Sender / Organization (if identifiable)  \n" +
             "   - Date (if present in text)  \n" +
             "   - Entities (names, places, companies, IDs, etc.)  \n" +
             "   - Summary (2–3 sentences only)  \n" +
-            "4. Detect and extract 5-7 **document-specific important fields** that vary by type of document. Examples:  \n" +
+            "4. Detect and extract 5-7 document-specific important fields that vary by type of document. Examples:  \n" +
             "   - For HR docs: \"Approved By\", \"Employee Name\", \"Manager Name\", \"Joining Date\", etc.  \n" +
             "   - For Invoices: \"Invoice Number\", \"Total Amount\", \"Due Date\", \"Tax ID\".  \n" +
             "   - For Legal docs: \"Case Number\", \"Court\", \"Judge\", \"Parties\".  \n" +
@@ -87,7 +88,7 @@ public class LLMService {
      *
      * @param extractedText OCR text from your pipeline
      * @return LLM response as string
-     * @throws IOException if network/API call fails
+     * @throws IOException, LLMServiceException if network/API call fails
      */
     public String processWithOpenAPI(String extractedText) throws IOException {
         prompt = prompt + extractedText;
@@ -125,6 +126,18 @@ public class LLMService {
                     .getJSONObject("message")
                     .getString("content")
                     .trim();
+
+        } catch (LLMServiceException llmServiceException) {
+            llmServiceException.getLocalizedMessage();
+            throw llmServiceException;
+
+        } catch (IOException ioException) {
+            ioException.getLocalizedMessage();
+            throw new IOException();
+
+        } catch (NullPointerException nullPointerException) {
+            nullPointerException.getLocalizedMessage();
+            throw new NullPointerException();
         }
     }
 
@@ -135,7 +148,7 @@ public class LLMService {
      * @return Gemini response as string
      * @throws IOException if network/API call fails
      */
-    public String processWithGemini(String extractedText) throws IOException {
+    public String processWithGemini(String extractedText) throws Exception {
         prompt = prompt + extractedText;
 
         JSONObject requestBody = new JSONObject()
@@ -165,7 +178,7 @@ public class LLMService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
+                throw new LLMServiceException("Unexpected code " + response);
             }
             String responseStr = response.body().string();
             JSONObject json = new JSONObject(responseStr);
@@ -178,7 +191,20 @@ public class LLMService {
                     .getJSONObject(0)
                     .getString("text")
                     .trim();
+
+        } catch (LLMServiceException llmServiceException) {
+            llmServiceException.getLocalizedMessage();
+            throw llmServiceException;
+
+        } catch (IOException ioException) {
+            ioException.getLocalizedMessage();
+            throw new IOException();
+
+        } catch (NullPointerException nullPointerException) {
+            nullPointerException.getLocalizedMessage();
+            throw new NullPointerException();
         }
+
     }
 
 }
