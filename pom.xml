@@ -61,12 +61,12 @@
             <version>1.21.1</version>
         </dependency>
 <!--        activate for s3-->
-<!--        <dependency> -->
-<!--            <groupId>software.amazon.awssdk</groupId>-->
-<!--            <artifactId>s3</artifactId>-->
-<!--            <version>2.33.5</version>-->
-<!--           <scope>compile</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.33.5</version>
+           <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
@@ -159,7 +159,7 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-drive</artifactId>
-            <version>v3-rev197-1.25.0</version>
+            <version>v3-rev20240509-2.0.0</version>
         </dependency>
 
         <!-- 2. Core Google API Client -->

@@ -17,6 +17,11 @@ public class MongoSearchService {
         this.documentMongoRepository = documentMongoRepository;
     }
 
+    /**
+     *
+     * @param pageable to get result in paged form
+     * @return pages of DocumentMetadata Entity
+     */
     public Page<DocumentMetadata> getAllDocuments(Pageable pageable){
         try {
             return documentMongoRepository.findAll(pageable);
@@ -26,6 +31,11 @@ public class MongoSearchService {
         return null;
     }
 
+    /**
+     *
+     * @param text to search in Title, Dept or Keyword
+     * @return List of DocumentMetadata Entity
+     */
     public List<DocumentMetadata> findText(String text) {
         try {
             return documentMongoRepository.searchByTitleDeptOrKeyword(text);
