@@ -31,9 +31,8 @@ public class DocumentController {
     }
 
     /**
-     * @route /api/documents/upload
      * @param file take Multipart file as input
-     * @return models DocumentMetadata after successfully processing & saving it
+     * @return models DocumentMetadata after successfully processing and saving it
      * Calls processAndStore in DocumentService
      */
     @PostMapping("/upload")

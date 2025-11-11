@@ -89,7 +89,7 @@ public class LLMService {
      *
      * @param extractedText OCR text from your pipeline
      * @return LLM response as string
-     * @throws IOException, LLMServiceException if network/API call fails
+     * @throws IOException LLMServiceException if network/API call fails
      */
     public String processWithOpenAPI(String extractedText) throws IOException {
         prompt = this.prompt + extractedText;

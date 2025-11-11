@@ -75,7 +75,7 @@ public class GmailIMAPConnector implements EmailConnector {
      * Next: Configure itself as Using MultipartFile
      * Next: Fetching Mail Data using a DTO as we are already pulling mails
      * Enhancement: Configure try and catch - currently row use
-     * Will return fetched attachments from email as List<File>
+     * Will return fetched attachments from email as List of File
      *
      * @return list files of type File - currently using a helper to convert it to MultipartFile
      */
