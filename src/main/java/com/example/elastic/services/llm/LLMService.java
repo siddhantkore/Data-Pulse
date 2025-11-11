@@ -25,7 +25,7 @@ public class LLMService {
     private final String GeminiApiKey;
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
-    private OkHttpClient client = new OkHttpClient();
+    private final OkHttpClient client = new OkHttpClient();
 
     public LLMService (@Value("${openai.api.key}") String openApiKey,
                        @Value("${openai.model}") String model,
@@ -34,6 +34,7 @@ public class LLMService {
         this.OpenApiKey = openApiKey;
         this.model = model;
         this.GeminiApiKey = geminiApiKey;
+        System.out.println(openApiKey + " "+ model + " " + GeminiApiKey);
     }
 
     String prompt = "You are an intelligent document classification and tagging assistant.  \n" +
@@ -91,10 +92,10 @@ public class LLMService {
      * @throws IOException, LLMServiceException if network/API call fails
      */
     public String processWithOpenAPI(String extractedText) throws IOException {
-        prompt = prompt + extractedText;
+        prompt = this.prompt + extractedText;
 
         JSONObject requestBody = new JSONObject()
-                .put("models", model) // choose your models
+                .put("model", model) // choose your models
                 .put("messages", new org.json.JSONArray()
                         .put(new JSONObject()
                                 .put("role", "system")
@@ -149,7 +150,7 @@ public class LLMService {
      * @throws IOException if network/API call fails
      */
     public String processWithGemini(String extractedText) throws Exception {
-        prompt = prompt + extractedText;
+        prompt = this.prompt + extractedText;
 
         JSONObject requestBody = new JSONObject()
                 .put("contents", new JSONArray()

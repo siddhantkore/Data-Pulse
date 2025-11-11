@@ -136,11 +136,14 @@ public class DocumentProcessorService {
                     .replaceAll("\\s{2,}", " ")      // collapse extra spaces
                     .trim();
 
+            System.out.println("Going for LLM call");
             String llmResponse = llmService.processWithOpenAPI(cleaned)
                     .trim()
                     .replaceAll("```json", "")
                     .replaceAll("```", "")
                     .trim();
+            System.out.println("LLM call OK");
+            System.out.println(llmResponse);
 
             documentMetadata.setDocumentStatus(DocumentStatus.SUMMARIZED_OK);
 
@@ -177,7 +180,7 @@ public class DocumentProcessorService {
             // Cleanup
             Files.deleteIfExists(tempFile.toPath());
         } catch (Exception e) {
-            System.out.println(e.getLocalizedMessage());
+            e.printStackTrace();
             documentMetadata.setDocumentStatus(DocumentStatus.PARSING_FAILED);
         }
 
