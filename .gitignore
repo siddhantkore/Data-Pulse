@@ -40,3 +40,12 @@ logs
 .log
 sandbox
 docs
+
+venv
+sandbox
+logs
+.env
+*.env
+__pycache__
+sandbox
+.db

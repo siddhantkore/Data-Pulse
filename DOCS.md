@@ -4,7 +4,7 @@ The API documentation is generated directly from the Javadoc comments (`/** ... 
 
 ### 1. <img src="src/main/resources/img.png" alt="Terminal Icon" width="40px" height="40px"> Command Line (CLI)
 
-
+npm run dev
 This method uses the standard JDK `javadoc` tool.
 
 1.  **Navigate:** Open your terminal and change the directory to the **root** of the project (the folder containing the `src` directory).

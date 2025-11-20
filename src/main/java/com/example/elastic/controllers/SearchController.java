@@ -49,7 +49,7 @@ public class SearchController {
      * @param size of records on each page, default 20 records/page
      * @return pages of DocumentMetadata
      */
-    @GetMapping("/getalldocs")
+    @GetMapping("/get-all-docs")
     public PagedModel<DocumentMetadata> getPagedDocuments(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size
