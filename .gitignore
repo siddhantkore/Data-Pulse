@@ -39,7 +39,7 @@ credentials
 logs
 .log
 sandbox
-docs
+#docs
 
 venv
 sandbox

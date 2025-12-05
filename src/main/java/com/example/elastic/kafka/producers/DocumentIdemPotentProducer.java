@@ -1,10 +1,29 @@
 package com.example.elastic.kafka.producers;
 
 
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 // Produce docs to queue and set status
 
-@Component
+@Service
 public class DocumentIdemPotentProducer {
+    @Autowired
+    private KafkaTemplate<String, byte[]> kafkaTemplate;
+
+    @Value("${app.kafka.topic}")
+    private String topic;
+
+    public void sendFile(MultipartFile file) throws IOException {
+        kafkaTemplate.send(
+                topic,
+                file.getOriginalFilename(),
+                file.getBytes()
+        );
+    }
 }

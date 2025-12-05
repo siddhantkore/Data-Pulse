@@ -46,4 +46,10 @@ public class InMemoryMultipartFile implements MultipartFile {
 
     @Override
     public void transferTo(File dest) throws IOException { Files.write(dest.toPath(), content); }
+
+    @Override
+    public void transferTo(java.nio.file.Path dest) throws IOException {
+        Files.write(dest, content);
+    }
+
 }
