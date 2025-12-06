@@ -1,9 +1,10 @@
 package com.example.elastic.controllers;
 
 import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
-import com.example.elastic.kafka.producers.DocumentIdemPotentProducer;
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.services.DocumentProcessorService;
+
+import java.io.IOException;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -15,9 +16,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-
-
 @RestController
 @RequestMapping("/api/documents")
 @CrossOrigin(origins = "*")
@@ -25,14 +23,12 @@ public class DocumentController {
 
     private final DocumentProcessorService documentProcessorService;
     private final GmailIMAPConnector connector;
-    private final DocumentIdemPotentProducer documentIdemPotentProducer;
 //    private final S3DocumentFetchService s3Service;
 
-    public DocumentController(DocumentProcessorService documentProcessorService, GmailIMAPConnector connector, DocumentIdemPotentProducer documentIdemPotentProducer /*, S3DocumentFetchService s3Service*/) {
+    public DocumentController(DocumentProcessorService documentProcessorService, GmailIMAPConnector connector /*, S3DocumentFetchService s3Service*/) {
         this.documentProcessorService = documentProcessorService;
         this.connector = connector;
 //        this.s3Service = s3Service;
-        this.documentIdemPotentProducer = documentIdemPotentProducer;
     }
 
     /**
@@ -43,10 +39,8 @@ public class DocumentController {
     @PostMapping("/upload")
     @CrossOrigin(origins="*")
     public ResponseEntity<DocumentMetadata> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
-//        DocumentMetadata saved = documentProcessorService.processAndStore(file);
-//        return ResponseEntity.ok(saved);
-        documentIdemPotentProducer.sendFile(file);
-        return null;
+        DocumentMetadata saved = documentProcessorService.processAndStore(file);
+        return ResponseEntity.ok(saved);
     }
 
     /**
