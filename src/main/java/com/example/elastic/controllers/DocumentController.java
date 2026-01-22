@@ -4,7 +4,9 @@ import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.repository.DocumentMongoRepository;
 import com.example.elastic.services.DocumentProcessorService;
+import com.example.elastic.services.MongoSearchService;
 import java.io.IOException;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -26,6 +28,7 @@ public class DocumentController {
     private final DocumentProcessorService documentProcessorService;
     private final GmailIMAPConnector connector;
     private final DocumentMongoRepository documentMongoRepository;
+    private final MongoSearchService mongoSearchService;
 //    private final S3DocumentFetchService s3Service;
 
     /**
@@ -74,16 +77,38 @@ public class DocumentController {
      * @return ResponseEntity with success message
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteDocument(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> deleteDocument(@PathVariable String id) {
+        Map<String, Object> response = new java.util.HashMap<>();
         try {
-            if (documentMongoRepository.existsById(id)) {
-                documentMongoRepository.deleteById(id);
-                return ResponseEntity.ok("Document deleted successfully");
+            System.out.println("Received delete request for document ID: " + id);
+            
+            // Use service method for deletion
+            boolean deleted = mongoSearchService.deleteDocumentById(id);
+            
+            if (deleted) {
+                response.put("success", true);
+                response.put("message", "Document deleted successfully");
+                response.put("id", id);
+                return ResponseEntity.ok(response);
             } else {
-                return ResponseEntity.notFound().build();
+                // Check if document exists to determine if it was not found or deletion failed
+                if (!documentMongoRepository.existsById(id)) {
+                    response.put("success", false);
+                    response.put("message", "Document not found with ID: " + id);
+                    return ResponseEntity.status(404).body(response);
+                } else {
+                    response.put("success", false);
+                    response.put("message", "Document deletion failed - document still exists");
+                    return ResponseEntity.status(500).body(response);
+                }
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error deleting document: " + e.getMessage());
+            e.printStackTrace();
+            System.err.println("Exception during document deletion: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "Error deleting document: " + e.getMessage());
+            response.put("error", e.getClass().getSimpleName());
+            return ResponseEntity.status(500).body(response);
         }
     }
 }
