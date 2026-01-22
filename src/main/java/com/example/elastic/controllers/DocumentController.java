@@ -1,12 +1,16 @@
 package com.example.elastic.controllers;
 
 import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
-import com.example.elastic.kafka.producers.DocumentIdemPotentProducer;
 import com.example.elastic.models.DocumentMetadata;
+import com.example.elastic.repository.DocumentMongoRepository;
 import com.example.elastic.services.DocumentProcessorService;
-
+import com.example.elastic.services.MongoSearchService;
+import java.io.IOException;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,9 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-
-
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/documents")
 @CrossOrigin(origins = "*")
@@ -25,15 +27,9 @@ public class DocumentController {
 
     private final DocumentProcessorService documentProcessorService;
     private final GmailIMAPConnector connector;
-    private final DocumentIdemPotentProducer documentIdemPotentProducer;
+    private final DocumentMongoRepository documentMongoRepository;
+    private final MongoSearchService mongoSearchService;
 //    private final S3DocumentFetchService s3Service;
-
-    public DocumentController(DocumentProcessorService documentProcessorService, GmailIMAPConnector connector, DocumentIdemPotentProducer documentIdemPotentProducer /*, S3DocumentFetchService s3Service*/) {
-        this.documentProcessorService = documentProcessorService;
-        this.connector = connector;
-//        this.s3Service = s3Service;
-        this.documentIdemPotentProducer = documentIdemPotentProducer;
-    }
 
     /**
      * @param file take Multipart file as input
@@ -43,10 +39,8 @@ public class DocumentController {
     @PostMapping("/upload")
     @CrossOrigin(origins="*")
     public ResponseEntity<DocumentMetadata> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
-//        DocumentMetadata saved = documentProcessorService.processAndStore(file);
-//        return ResponseEntity.ok(saved);
-        documentIdemPotentProducer.sendFile(file);
-        return null;
+        DocumentMetadata saved = documentProcessorService.processAndStore(file);
+        return ResponseEntity.ok(saved);
     }
 
     /**
@@ -75,5 +69,46 @@ public class DocumentController {
 //                .header("Content-Disposition", "attachment; filename=\"" + s3Key + "\"")
 //                .body(content);
         return null;
+    }
+
+    /**
+     * Delete a document by ID
+     * @param id the document ID to delete
+     * @return ResponseEntity with success message
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteDocument(@PathVariable String id) {
+        Map<String, Object> response = new java.util.HashMap<>();
+        try {
+            System.out.println("Received delete request for document ID: " + id);
+            
+            // Use service method for deletion
+            boolean deleted = mongoSearchService.deleteDocumentById(id);
+            
+            if (deleted) {
+                response.put("success", true);
+                response.put("message", "Document deleted successfully");
+                response.put("id", id);
+                return ResponseEntity.ok(response);
+            } else {
+                // Check if document exists to determine if it was not found or deletion failed
+                if (!documentMongoRepository.existsById(id)) {
+                    response.put("success", false);
+                    response.put("message", "Document not found with ID: " + id);
+                    return ResponseEntity.status(404).body(response);
+                } else {
+                    response.put("success", false);
+                    response.put("message", "Document deletion failed - document still exists");
+                    return ResponseEntity.status(500).body(response);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Exception during document deletion: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "Error deleting document: " + e.getMessage());
+            response.put("error", e.getClass().getSimpleName());
+            return ResponseEntity.status(500).body(response);
+        }
     }
 }

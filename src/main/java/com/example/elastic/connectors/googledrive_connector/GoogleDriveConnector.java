@@ -3,13 +3,12 @@ package com.example.elastic.connectors.googledrive_connector;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
-import org.springframework.stereotype.Service;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class GoogleDriveConnector {
@@ -20,6 +19,8 @@ public class GoogleDriveConnector {
     /**
      *
      * Initializes the DriveDocumentPuller by creating the authorized Drive services.
+     *
+     * @param driveService the Drive service instance
      */
     public GoogleDriveConnector(Drive driveService) {
         this.driveService = driveService;
@@ -27,9 +28,9 @@ public class GoogleDriveConnector {
 
     /**
      *
-     * @param query
-     * @return
-     * @throws IOException
+     * @param query the search query
+     * @return list of matching files
+     * @throws IOException if listing fails
      */
     public List<File> listDocuments(String query) throws IOException {
         FileList result = driveService.files().list()
@@ -54,9 +55,9 @@ public class GoogleDriveConnector {
 
     /**
      *
-     * @param fileId
-     * @param destinationPath
-     * @return
+     * @param fileId the Google Drive file ID
+     * @param destinationPath the local path to save the file
+     * @return true if download successful, false otherwise
      */
     public boolean downloadFile(String fileId, String destinationPath) {
         try (OutputStream outputStream = new FileOutputStream(destinationPath)) {

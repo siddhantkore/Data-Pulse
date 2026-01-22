@@ -1,19 +1,18 @@
 package com.example.elastic.utils.hashing;
 
 import com.example.elastic.exceptions.HashSha256Exception;
-import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 @Component
 public class GenerateHash {
 
     // Define a buffer size for efficient reading of large files
-    private final int BUFFER_SIZE = 8192; // 8KB buffer
+    private final int bufferSize = 8192; // 8KB buffer
 
     /**
      * Calculates the SHA-256 hash of a file's content.
@@ -27,7 +26,7 @@ public class GenerateHash {
             // 1. Get the SHA-256 MessageDigest instance
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-            byte[] buffer = new byte[BUFFER_SIZE];
+            byte[] buffer = new byte[bufferSize];
             int bytesRead;
 
             // 2. Read the file in chunks and update the digest

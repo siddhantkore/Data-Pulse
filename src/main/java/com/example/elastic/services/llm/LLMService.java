@@ -1,6 +1,8 @@
 package com.example.elastic.services.llm;
 
 import com.example.elastic.exceptions.LLMServiceException;
+import java.io.IOException;
+import java.util.Objects;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -12,17 +14,14 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.Objects;
-
 @Service
 public class LLMService {
 
-    private final String OpenApiKey;
+    private final String openApiKey;
     private final String model;
     private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-    private final String GeminiApiKey;
+    private final String geminiApiKey;
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
     private final OkHttpClient client = new OkHttpClient();
@@ -31,10 +30,10 @@ public class LLMService {
                        @Value("${openai.model}") String model,
                        @Value("${gemini.api.key}") String geminiApiKey) {
 
-        this.OpenApiKey = openApiKey;
+        this.openApiKey = openApiKey;
         this.model = model;
-        this.GeminiApiKey = geminiApiKey;
-        System.out.println(openApiKey + " "+ model + " " + GeminiApiKey);
+        this.geminiApiKey = geminiApiKey;
+        System.out.println(openApiKey + " "+ model + " " + geminiApiKey);
     }
 
     String prompt = "You are an intelligent document classification and tagging assistant.  \n" +
@@ -112,7 +111,7 @@ public class LLMService {
 
         Request request = new Request.Builder()
                 .url(OPENAI_API_URL)
-                .header("Authorization", "Bearer " + OpenApiKey)
+                .header("Authorization", "Bearer " + openApiKey)
                 .post(body)
                 .build();
 
@@ -169,7 +168,7 @@ public class LLMService {
         );
 
         HttpUrl url = Objects.requireNonNull(HttpUrl.parse(GEMINI_API_URL)).newBuilder()
-                .addQueryParameter("key", GeminiApiKey)
+                .addQueryParameter("key", geminiApiKey)
                 .build();
 
         Request request = new Request.Builder()

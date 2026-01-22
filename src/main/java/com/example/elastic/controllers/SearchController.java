@@ -3,6 +3,8 @@ package com.example.elastic.controllers;
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.services.ElasticSearchService;
 import com.example.elastic.services.MongoSearchService;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -36,11 +36,14 @@ public class SearchController {
     public ResponseEntity<List<DocumentMetadata>> search(@RequestParam String q) {
         try {
             List<DocumentMetadata> results =  mongoSearchService.findText(q);
+            if (results == null) {
+                return ResponseEntity.ok(List.of());
+            }
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
+            return ResponseEntity.ok(List.of());
         }
-        return null;
     }
 
     /**
@@ -72,5 +75,19 @@ public class SearchController {
         return ResponseEntity.ok(results);
     }
 
+    /**
+     * Get all categories with their document counts
+     * @return Map of category name to document count
+     */
+    @GetMapping("/categories")
+    public ResponseEntity<Map<String, Long>> getCategories() {
+        try {
+            Map<String, Long> categories = mongoSearchService.getCategoriesWithCounts();
+            return ResponseEntity.ok(categories);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
 }

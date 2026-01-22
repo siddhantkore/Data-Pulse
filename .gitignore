@@ -49,3 +49,6 @@ logs
 __pycache__
 sandbox
 .db
+
+studio/
+frontend/

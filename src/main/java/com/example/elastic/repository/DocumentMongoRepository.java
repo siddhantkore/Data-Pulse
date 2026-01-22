@@ -1,14 +1,13 @@
 package com.example.elastic.repository;
 
 import com.example.elastic.models.DocumentMetadata;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public interface DocumentMongoRepository extends MongoRepository<DocumentMetadata, String> {

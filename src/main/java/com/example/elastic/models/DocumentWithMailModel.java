@@ -1,11 +1,10 @@
 package com.example.elastic.models;
 
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
