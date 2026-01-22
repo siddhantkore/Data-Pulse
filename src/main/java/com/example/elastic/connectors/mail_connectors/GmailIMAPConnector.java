@@ -3,19 +3,24 @@ package com.example.elastic.connectors.mail_connectors;
 import com.example.elastic.sandbox.Sandbox;
 import com.example.elastic.services.DocumentProcessorService;
 import com.example.elastic.utils.InMemoryMultipartFile;
-
+import jakarta.mail.BodyPart;
+import jakarta.mail.Folder;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
 import jakarta.mail.Part;
-import jakarta.mail.Message;
 import jakarta.mail.Session;
-import jakarta.mail.MessagingException;
 import jakarta.mail.Store;
-import jakarta.mail.Folder;
-import jakarta.mail.BodyPart;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.search.ComparisonTerm;
 import jakarta.mail.search.ReceivedDateTerm;
-
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,23 +28,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Properties;
-import java.util.Date;
-import java.util.Calendar;
-
-
-/**
- * Service to fetch Mails and attachments from Gmail
- * Inserts username and password form application.properties using @Value
- */
 @Service
 public class GmailIMAPConnector implements EmailConnector {
 
-    private static final Logger logger = LoggerFactory.getLogger(GmailIMAPConnector.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GmailIMAPConnector.class);
 
     private final String username;
 
@@ -90,7 +82,7 @@ public class GmailIMAPConnector implements EmailConnector {
             Session session = createSession();
             store = createStore(session);
             store.connect("imap.gmail.com", username, password);
-            logger.info("Connected to Gmail IMAP.");
+            LOGGER.info("Connected to Gmail IMAP.");
 
             // Open the INBOX folder
             inbox = getInbox(store);
@@ -105,7 +97,7 @@ public class GmailIMAPConnector implements EmailConnector {
             Message[] messages = inbox.search(new ReceivedDateTerm(ComparisonTerm.GT, sinceDate));
             Sandbox sandbox = new Sandbox();
             sandbox.printMessages(messages);
-            logger.info("Found {} messages.", messages.length);
+            LOGGER.info("Found {} messages.", messages.length);
 
             for (Message message : messages) {
 
@@ -141,7 +133,7 @@ public class GmailIMAPConnector implements EmailConnector {
 
                                 // Add to list for return
                                 attachments.add(multipartFile);
-                                logger.info("Fetched attachment: {}", fileName);
+                                LOGGER.info("Fetched attachment: {}", fileName);
                             }
                         }
                     }
@@ -149,17 +141,17 @@ public class GmailIMAPConnector implements EmailConnector {
             }
 
         } catch (Exception e) {
-            logger.error("Error fetching attachments: {}", e.getMessage(), e);
+            LOGGER.error("Error fetching attachments: {}", e.getMessage(), e);
         } finally {
             try {
                 if (inbox != null && inbox.isOpen()) inbox.close(false);
                 if (store != null) store.close();
             } catch (MessagingException e) {
-                logger.warn("Error closing mail resources: {}", e.getMessage());
+                LOGGER.warn("Error closing mail resources: {}", e.getMessage());
             }
         }
 
-        logger.info("Returning {} attachments as MultipartFile.", attachments.size());
+        LOGGER.info("Returning {} attachments as MultipartFile.", attachments.size());
         return attachments;
     }
 
@@ -178,7 +170,7 @@ public class GmailIMAPConnector implements EmailConnector {
             }
             return true;
         } catch (Exception e) {
-            logger.error("Error sending attachments to document services: {}", e.getMessage(), e);
+            LOGGER.error("Error sending attachments to document services: {}", e.getMessage(), e);
             return false;
         }
     }

@@ -3,10 +3,6 @@ package com.example.elastic.models.enums;
 
 import lombok.Getter;
 
-/**
- * Defines the complete workflow status for a document, from ingestion
- * through automated processing, to manual review and final saving.
- */
 @Getter
 public enum DocumentStatus {
 

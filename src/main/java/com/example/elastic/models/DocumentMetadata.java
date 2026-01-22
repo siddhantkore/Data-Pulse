@@ -1,13 +1,12 @@
 package com.example.elastic.models;
 
 import com.example.elastic.models.enums.DocumentStatus;
-import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.Document;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
 
 @Data
 @Document(indexName = "documents")

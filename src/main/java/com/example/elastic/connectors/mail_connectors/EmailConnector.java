@@ -1,9 +1,7 @@
 package com.example.elastic.connectors.mail_connectors;
 
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface EmailConnector {
     /**

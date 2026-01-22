@@ -2,12 +2,13 @@ package com.example.elastic.controllers;
 
 import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
 import com.example.elastic.models.DocumentMetadata;
+import com.example.elastic.repository.DocumentMongoRepository;
 import com.example.elastic.services.DocumentProcessorService;
-
 import java.io.IOException;
-
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/documents")
 @CrossOrigin(origins = "*")
@@ -23,13 +25,8 @@ public class DocumentController {
 
     private final DocumentProcessorService documentProcessorService;
     private final GmailIMAPConnector connector;
+    private final DocumentMongoRepository documentMongoRepository;
 //    private final S3DocumentFetchService s3Service;
-
-    public DocumentController(DocumentProcessorService documentProcessorService, GmailIMAPConnector connector /*, S3DocumentFetchService s3Service*/) {
-        this.documentProcessorService = documentProcessorService;
-        this.connector = connector;
-//        this.s3Service = s3Service;
-    }
 
     /**
      * @param file take Multipart file as input
@@ -69,5 +66,24 @@ public class DocumentController {
 //                .header("Content-Disposition", "attachment; filename=\"" + s3Key + "\"")
 //                .body(content);
         return null;
+    }
+
+    /**
+     * Delete a document by ID
+     * @param id the document ID to delete
+     * @return ResponseEntity with success message
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteDocument(@PathVariable String id) {
+        try {
+            if (documentMongoRepository.existsById(id)) {
+                documentMongoRepository.deleteById(id);
+                return ResponseEntity.ok("Document deleted successfully");
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error deleting document: " + e.getMessage());
+        }
     }
 }

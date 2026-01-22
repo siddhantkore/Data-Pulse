@@ -2,20 +2,20 @@ package com.example.elastic.services;
 
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.repository.DocumentMongoRepository;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
+@RequiredArgsConstructor
 @Service
 public class MongoSearchService {
 
     private final DocumentMongoRepository documentMongoRepository;
-
-    public MongoSearchService(DocumentMongoRepository documentMongoRepository) {
-        this.documentMongoRepository = documentMongoRepository;
-    }
 
     /**
      *
@@ -43,5 +43,29 @@ public class MongoSearchService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Get all unique categories with their document counts
+     * @return Map of category name to document count
+     */
+    public Map<String, Long> getCategoriesWithCounts() {
+        try {
+            List<DocumentMetadata> allDocuments = documentMongoRepository.findAll();
+            Map<String, Long> categoryCounts = new HashMap<>();
+            
+            for (DocumentMetadata doc : allDocuments) {
+                if (doc.getCategories() != null) {
+                    for (String category : doc.getCategories()) {
+                        categoryCounts.put(category, categoryCounts.getOrDefault(category, 0L) + 1);
+                    }
+                }
+            }
+            
+            return categoryCounts;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap<>();
+        }
     }
 }

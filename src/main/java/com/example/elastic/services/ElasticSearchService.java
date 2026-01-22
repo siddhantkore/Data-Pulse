@@ -1,13 +1,11 @@
 package com.example.elastic.services;
 
 import com.example.elastic.models.DocumentMetadata;
-//import com.example.elastic.repository.DocumentSearchRepository;
+import java.util.List;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class ElasticSearchService {
@@ -22,6 +20,9 @@ public class ElasticSearchService {
 
     /**
      * Search documents where extractedText contains the query string.
+     *
+     * @param query the search query string
+     * @return list of matching documents
      */
     public List<DocumentMetadata> searchByText(String query) {
         return null; // searchRepository.findByExtractedTextContainingIgnoreCase(query);
@@ -29,13 +30,20 @@ public class ElasticSearchService {
 
     /**
      * Search by file name.
+     *
+     * @param fileName the file name to search for
+     * @return list of matching documents
      */
     public List<DocumentMetadata> searchByFileName(String fileName) {
-        return null ; //searchRepository.findByFileNameContainingIgnoreCase(fileName);
+        return null; //searchRepository.findByFileNameContainingIgnoreCase(fileName);
     }
 
     /**
      * Full text search
+     *
+     * @param query the search query string
+     * @return list of matching documents
+     * @throws Exception if search fails
      */
     public List<DocumentMetadata> fullTextSearch(String query) throws Exception {
         NativeQuery searchQuery = NativeQuery.builder()

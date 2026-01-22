@@ -9,12 +9,27 @@ public class EmailConfig {
     private String accessToken;
 
     // getters and setters
-    public String getUser() { return user; }
-    public void setUser(String user) { this.user = user; }
+    public String getUser() {
+        return user;
+    }
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public void setUser(String user) {
+        this.user = user;
+    }
 
-    public String getAccessToken() { return accessToken; }
-    public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
 }
