@@ -19,11 +19,19 @@ public class DocumentIdemPotentProducer {
     @Value("${app.kafka.topic}")
     private String topic;
 
-    public void sendFile(MultipartFile file) throws IOException {
+    public void sendFile(MultipartFile file, String documentId) throws IOException {
         kafkaTemplate.send(
                 topic,
-                file.getOriginalFilename(),
+                documentId,
                 file.getBytes()
+        );
+    }
+
+    public void sendFileBytes(byte[] fileBytes, String documentId) throws IOException {
+        kafkaTemplate.send(
+                topic,
+                documentId,
+                fileBytes
         );
     }
 }

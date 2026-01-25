@@ -19,6 +19,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -216,5 +217,102 @@ public class DocumentProcessorService {
         );
 
         return metadata;
+    }
+
+    /**
+     * Create a pending document entry in database with PENDING status
+     * Used when file is first uploaded and sent to Kafka queue
+     */
+    public DocumentMetadata createPendingDocument(DocumentMetadata documentMetadata) {
+        String id = UUID.randomUUID().toString();
+        documentMetadata.setId(id);
+        documentMetadata.setDocumentStatus(DocumentStatus.PENDING);
+        return documentMongoRepository.save(documentMetadata);
+    }
+
+    /**
+     * Async method to process file bytes from Kafka queue
+     * Updates document status as processing progresses
+     */
+    public DocumentMetadata processAndStore(byte[] fileBytes, String documentId) {
+        Optional<DocumentMetadata> existingDoc = documentMongoRepository.findById(documentId);
+        DocumentMetadata documentMetadata = existingDoc.orElseGet(DocumentMetadata::new);
+        
+        try {
+            // Update status to PROCESSING
+            documentMetadata.setDocumentStatus(DocumentStatus.PROCESSING);
+            documentMongoRepository.save(documentMetadata);
+
+            // Create temporary file from bytes
+            File tempFile = File.createTempFile("upload-" + documentId, ".tmp");
+            Files.write(tempFile.toPath(), fileBytes);
+
+            // Extract text using Tesseract (time-consuming OCR)
+            System.out.println("🔄 Starting OCR for document: " + documentId);
+            Tesseract tesseract = new Tesseract();
+            tesseract.setDatapath(tesseractDataPath);
+            tesseract.setLanguage("eng");
+            tesseract.setOcrEngineMode(1); // LSTM
+            tesseract.setPageSegMode(6);
+            String extractedText = tesseract.doOCR(tempFile);
+
+            // Clean extracted text
+            String cleaned = extractedText
+                    .replaceAll("[\\n\\r]+", "\n")
+                    .replaceAll("\\s{2,}", " ")
+                    .trim();
+
+            // Process with LLM for extraction and categorization
+            System.out.println("🤖 Processing with LLM for document: " + documentId);
+            String llmResponse = llmService.processWithOpenAPI(cleaned)
+                    .trim()
+                    .replaceAll("```json", "")
+                    .replaceAll("```", "")
+                    .trim();
+
+            // Map LLM response to document metadata
+            documentMetadata = mapLLMResponseToModelClass(llmResponse, documentMetadata);
+            documentMetadata.setDocumentStatus(DocumentStatus.PROCESSED_OK);
+
+            // Save processed document
+            documentMetadata.setDocumentStatus(DocumentStatus.SAVED_TO_DB);
+            documentMongoRepository.save(documentMetadata);
+
+            System.out.println("✅ Document processed successfully: " + documentId);
+
+            // Cleanup temp file
+            Files.deleteIfExists(tempFile.toPath());
+
+        } catch (Exception e) {
+            System.err.println("❌ Error processing document " + documentId + ": " + e.getMessage());
+            e.printStackTrace();
+            documentMetadata.setDocumentStatus(DocumentStatus.PARSING_FAILED);
+            documentMongoRepository.save(documentMetadata);
+        }
+
+        return documentMetadata;
+    }
+
+    /**
+     * Mark document as failed with error message
+     */
+    public void markDocumentAsFailed(String documentId, String errorMessage) {
+        try {
+            Optional<DocumentMetadata> existingDoc = documentMongoRepository.findById(documentId);
+            if (existingDoc.isPresent()) {
+                DocumentMetadata doc = existingDoc.get();
+                doc.setDocumentStatus(DocumentStatus.PARSING_FAILED);
+                documentMongoRepository.save(doc);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to update document status: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get document status for polling
+     */
+    public DocumentMetadata getDocumentStatus(String documentId) {
+        return documentMongoRepository.findById(documentId).orElse(null);
     }
 }

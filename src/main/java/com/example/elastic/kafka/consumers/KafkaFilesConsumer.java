@@ -21,14 +21,18 @@ public class KafkaFilesConsumer {
     }
 
     @KafkaListener(topics = "${app.kafka.topic}", groupId = "file-consumer")
-    public void consumeFile(@Header(KafkaHeaders.RECEIVED_KEY) String fileName,
+    public void consumeFile(@Header(KafkaHeaders.RECEIVED_KEY) String documentId,
                             @Payload byte[] fileBytes) throws IOException {
 
-        MultipartFile multipartFile = new InMemoryMultipartFile(fileName, fileName, "application/octet-stream", fileBytes);
-
-//        documentProcessorService.processAndStore(multipartFile);
-
-        System.out.println("✅ Multipart reconstructed: " + multipartFile.getOriginalFilename());
+        try {
+            documentProcessorService.processAndStore(fileBytes, documentId);
+            System.out.println("Document processed successfully: " + documentId);
+        } catch (Exception e) {
+            System.err.println("Error processing document: " + documentId);
+            e.printStackTrace();
+            // Update document status to FAILED
+            documentProcessorService.markDocumentAsFailed(documentId, e.getMessage());
+        }
     }
 
 
