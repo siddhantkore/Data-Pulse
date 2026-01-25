@@ -109,6 +109,37 @@
             <version>5.16.0</version>
         </dependency>
 
+        <!-- PDF text extraction -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
+        <!-- Apache POI for Office document extraction -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-scratchpad</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+
+        <!-- Apache Tika for MIME type detection -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
         <!-- Utility: Lombok for cleaner code -->
         <dependency>
             <groupId>org.projectlombok</groupId>
