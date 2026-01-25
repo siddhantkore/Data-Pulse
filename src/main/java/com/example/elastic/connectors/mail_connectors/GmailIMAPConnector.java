@@ -166,7 +166,10 @@ public class GmailIMAPConnector implements EmailConnector {
         try {
             List<MultipartFile> files = fetchAttachments();
             for (MultipartFile multipartFile : files) {
-                documentProcessorService.processAndStore(multipartFile);
+                byte[] bytes = multipartFile.getBytes();
+                String fileName = multipartFile.getOriginalFilename();
+                String docId = java.util.UUID.randomUUID().toString();
+                documentProcessorService.processAndStore(bytes, docId, fileName);
             }
             return true;
         } catch (Exception e) {

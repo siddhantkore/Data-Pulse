@@ -2,9 +2,13 @@ package com.example.elastic.services;
 
 import com.example.elastic.models.DocumentMetadata;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 
 /**
@@ -70,12 +74,15 @@ public class ElasticSearchService {
                     )
                     .build();
 
-            return elasticsearchOperations
-                    .searchForPage(searchQuery, DocumentMetadata.class)
-                    .map(SearchHit::getContent);
+            SearchHits<DocumentMetadata> searchHits = elasticsearchOperations
+                    .search(searchQuery, DocumentMetadata.class);
+            List<DocumentMetadata> content = searchHits.getSearchHits().stream()
+                    .map(SearchHit::getContent)
+                    .toList();
+            return new PageImpl<>(content, pageable, searchHits.getTotalHits());
         } catch (Exception e) {
             e.printStackTrace();
-            return Page.empty(pageable);
+            return new PageImpl<>(List.of(), pageable, 0);
         }
     }
 }

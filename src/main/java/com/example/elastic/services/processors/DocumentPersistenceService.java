@@ -31,7 +31,7 @@ public class DocumentPersistenceService {
     public DocumentMetadata createPendingDocument(DocumentMetadata documentMetadata) {
         String id = UUID.randomUUID().toString();
         documentMetadata.setId(id);
-        documentMetadata.setDocumentStatus(DocumentStatus.PENDING);
+        documentMetadata.setDocumentStatus(DocumentStatus.UPLOADED);
         documentMetadata.setCreatedAtLocalDateTime(LocalDateTime.now());
         documentMetadata.setUpdatedAtLocalDateTime(LocalDateTime.now());
         return documentRepository.save(documentMetadata);

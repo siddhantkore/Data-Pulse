@@ -4,11 +4,14 @@ import com.example.elastic.connectors.mail_connectors.GmailIMAPConnector;
 import com.example.elastic.kafka.producers.DocumentIdemPotentProducer;
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.models.enums.DocumentStatus;
+import com.example.elastic.repository.DocumentElasticsearchRepository;
 import com.example.elastic.services.DocumentProcessorService;
 import java.io.IOException;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +29,7 @@ public class DocumentController {
     private final DocumentProcessorService documentProcessorService;
     private final GmailIMAPConnector connector;
     private final DocumentIdemPotentProducer documentIdemPotentProducer;
+    private final DocumentElasticsearchRepository documentElasticsearchRepository;
 
     /**
      * @param file take Multipart file as input
@@ -35,15 +39,15 @@ public class DocumentController {
     @PostMapping("/upload")
     @CrossOrigin(origins="*")
     public ResponseEntity<DocumentMetadata> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
-        // Create initial document metadata with PENDING status
+        // Create initial document metadata with UPLOADED status
         DocumentMetadata pendingDocument = new DocumentMetadata();
         pendingDocument.setFileName(file.getOriginalFilename());
-        pendingDocument.setDocumentStatus(DocumentStatus.PENDING);
+        pendingDocument.setDocumentStatus(DocumentStatus.UPLOADED);
         DocumentMetadata saved = documentProcessorService.createPendingDocument(pendingDocument);
-        
+
         // Send file to Kafka queue for async OCR processing
         documentIdemPotentProducer.sendFile(file, saved.getId());
-        
+
         // Return immediately with document ID (status = PENDING)
         return ResponseEntity.accepted().body(saved);
     }
@@ -100,27 +104,14 @@ public class DocumentController {
         Map<String, Object> response = new java.util.HashMap<>();
         try {
             System.out.println("Received delete request for document ID: " + id);
-            
-            // Use service method for deletion
-            boolean deleted = mongoSearchService.deleteDocumentById(id);
-            
-            if (deleted) {
-                response.put("success", true);
-                response.put("message", "Document deleted successfully");
-                response.put("id", id);
-                return ResponseEntity.ok(response);
-            } else {
-                // Check if document exists to determine if it was not found or deletion failed
-                if (!documentMongoRepository.existsById(id)) {
-                    response.put("success", false);
-                    response.put("message", "Document not found with ID: " + id);
-                    return ResponseEntity.status(404).body(response);
-                } else {
-                    response.put("success", false);
-                    response.put("message", "Document deletion failed - document still exists");
-                    return ResponseEntity.status(500).body(response);
-                }
-            }
+
+            // Use Elasticsearch repository for deletion
+            documentElasticsearchRepository.deleteById(id);
+
+            response.put("success", true);
+            response.put("message", "Document deleted successfully");
+            response.put("id", id);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("Exception during document deletion: " + e.getMessage());

@@ -20,6 +20,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -145,13 +146,16 @@ public class GmailIMAPConnectorTest {
     public void testSendToDocumentService_CallsProcessorService() throws Exception {
         // Prepare mock file
         MultipartFile mockFile = mock(MultipartFile.class);
+        byte[] fileBytes = new byte[]{1, 2, 3};
+        doReturn(fileBytes).when(mockFile).getBytes();
+        doReturn("test.txt").when(mockFile).getOriginalFilename();
         doReturn(List.of(mockFile)).when(connector).fetchAttachments();
 
         // Execute
         boolean result = connector.sendToDocumentService();
 
         // Verify processing
-        verify(mockDocumentProcessorService, times(1)).processAndStore(mockFile);
+        verify(mockDocumentProcessorService, times(1)).processAndStore(eq(fileBytes), anyString(), eq("test.txt"));
         assertTrue(result);
     }
 }

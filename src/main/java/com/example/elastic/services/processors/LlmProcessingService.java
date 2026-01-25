@@ -3,6 +3,8 @@ package com.example.elastic.services.processors;
 import com.example.elastic.services.llm.LLMService;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+
 /**
  * Handles LLM (Large Language Model) processing of text.
  * Single Responsibility: Process cleaned text with LLM to extract structured data
@@ -23,7 +25,7 @@ public class LlmProcessingService {
      * @param cleanedText The cleaned extracted text
      * @return Sanitized JSON response from LLM
      */
-    public String processWithLLM(String cleanedText) {
+    public String processWithLLM(String cleanedText) throws IOException {
         String rawResponse = llmService.processWithOpenAPI(cleanedText);
         return textCleaningService.sanitizeLlmResponse(rawResponse);
     }

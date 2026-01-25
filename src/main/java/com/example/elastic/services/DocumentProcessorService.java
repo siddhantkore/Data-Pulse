@@ -67,7 +67,7 @@ public class DocumentProcessorService {
             DocumentMetadata document = documentPersistenceService.getDocumentById(documentId)
                     .orElseGet(DocumentMetadata::new);
 
-            documentPersistenceService.updateDocumentStatus(documentId, DocumentStatus.PROCESSING);
+            documentPersistenceService.updateDocumentStatus(documentId, DocumentStatus.PULLED);
             System.out.println("Processing document: " + documentId);
 
             String extractedText = textExtractor.extractText(fileBytes, fileName);

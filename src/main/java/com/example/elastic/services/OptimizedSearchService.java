@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchPage;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,21 +40,21 @@ public class OptimizedSearchService {
      */
     public Page<DocumentMetadata> getAllDocuments(Pageable pageable) {
         try {
-            SearchPage<DocumentMetadata> searchPage = elasticsearchOperations.searchForPage(
+            SearchHits<DocumentMetadata> searchHits = elasticsearchOperations.search(
                     NativeQuery.builder()
                             .withPageable(pageable)
                             .build(),
                     DocumentMetadata.class
             );
             return new PageImpl<>(
-                    searchPage.getContent().stream().map(SearchHit::getContent).toList(),
+                    searchHits.getSearchHits().stream().map(SearchHit::getContent).toList(),
                     pageable,
-                    searchPage.getTotalElements()
+                    searchHits.getTotalHits()
             );
         } catch (Exception e) {
             e.printStackTrace();
+            return Page.empty(pageable);
         }
-        return Page.empty(pageable);
     }
 
     /**
@@ -179,7 +179,7 @@ public class OptimizedSearchService {
             String source,
             Pageable pageable) {
         try {
-            NativeQuery.NativeQueryBuilder queryBuilder = NativeQuery.builder()
+            var queryBuilder = NativeQuery.builder()
                     .withPageable(pageable);
 
             if (query != null && !query.isEmpty()) {
@@ -192,15 +192,15 @@ public class OptimizedSearchService {
                 );
             }
 
-            SearchPage<DocumentMetadata> searchPage = elasticsearchOperations.searchForPage(
+            SearchHits<DocumentMetadata> searchHits = elasticsearchOperations.search(
                     queryBuilder.build(),
                     DocumentMetadata.class
             );
 
             return new PageImpl<>(
-                    searchPage.getContent().stream().map(SearchHit::getContent).toList(),
+                    searchHits.getSearchHits().stream().map(SearchHit::getContent).toList(),
                     pageable,
-                    searchPage.getTotalElements()
+                    searchHits.getTotalHits()
             );
         } catch (Exception e) {
             e.printStackTrace();
