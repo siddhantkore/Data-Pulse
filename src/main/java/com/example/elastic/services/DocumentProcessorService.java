@@ -2,317 +2,144 @@ package com.example.elastic.services;
 
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.models.enums.DocumentStatus;
-import com.example.elastic.repository.DocumentMongoRepository;
-import com.example.elastic.services.llm.LLMService;
-import com.example.elastic.utils.hashing.GenerateHash;
+import com.example.elastic.services.processors.DocumentDataMapper;
+import com.example.elastic.services.processors.DocumentPersistenceService;
+import com.example.elastic.services.processors.FileHandlingService;
+import com.example.elastic.services.processors.LlmProcessingService;
+import com.example.elastic.services.processors.OcrExtractionService;
+import com.example.elastic.services.processors.TextCleaningService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import net.sourceforge.tess4j.Tesseract;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import net.sourceforge.tess4j.TesseractException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.io.IOException;
 
 /**
- * This will be the services working after pulling doc from queue
- *
+ * Orchestrator service that coordinates document processing workflow.
+ * Single Responsibility: Orchestrate the document processing pipeline
+ * Delegates specific tasks to specialized services following SOLID principles
  */
 @Service
 public class DocumentProcessorService {
 
-    private final DocumentMongoRepository documentMongoRepository;
-//    private final DocumentSearchRepository searchRepository;
-    private final LLMService llmService;
-    private final String tesseractDataPath;
-    @Autowired
-    private GenerateHash generateHash;
+    private final OcrExtractionService ocrService;
+    private final TextCleaningService textCleaningService;
+    private final LlmProcessingService llmProcessingService;
+    private final DocumentDataMapper documentDataMapper;
+    private final DocumentPersistenceService documentPersistenceService;
 
-    private final ObjectMapper mapper;
-//    private final S3Client s3Client;
-//    private final String bucket;
-//    private final String region;
-
-    @Autowired
     public DocumentProcessorService(
-            DocumentMongoRepository documentMongoRepository,
-//            DocumentSearchRepository searchRepository,
-            LLMService llmService,
-            ObjectMapper objectMapper,
-            @Value("${tesseract.datapath}") String tesseractDataPath
-//            @Value("${s3.endpoint}") String endpoint,
-//            @Value("${s3.access-key}") String accessKey,
-//            @Value("${s3.secret-key}") String secretKey,
-//            @Value("${s3.region}") String region,
-//            @Value("${s3.bucket}") String bucket
+            OcrExtractionService ocrService,
+            TextCleaningService textCleaningService,
+            LlmProcessingService llmProcessingService,
+            DocumentDataMapper documentDataMapper,
+            DocumentPersistenceService documentPersistenceService
     ) {
-        this.documentMongoRepository = documentMongoRepository;
-        this.llmService = llmService;
-        this.mapper = objectMapper;
-        this.tesseractDataPath = tesseractDataPath;
-//        this.bucket = bucket;
-//
-//        this.s3Client = S3Client.builder()
-//                .endpointOverride(java.net.URI.create(endpoint))
-//                .region(Region.of(region))
-//                .credentialsProvider(StaticCredentialsProvider.create(
-//                        AwsBasicCredentials.create(accessKey, secretKey)))
-//                .serviceConfiguration(S3Configuration.builder()
-//                        .pathStyleAccessEnabled(true)  // important for MinIO in Docker
-//                        .build())
-//                .build();
-//        this.region = region;
-
-    }
-
-//    @PostConstruct
-//    public void initBucket() {
-//        try {
-//            // Check if bucket exists
-//            HeadBucketRequest headBucketRequest = HeadBucketRequest.builder()
-//                    .bucket(bucket)
-//                    .build();
-//            s3Client.headBucket(headBucketRequest);
-//        } catch (NoSuchBucketException e) {
-//            // Create if not exists
-//            s3Client.createBucket(CreateBucketRequest.builder()
-//                    .bucket(bucket)
-//                    .createBucketConfiguration(
-//                            CreateBucketConfiguration.builder()
-//                                    .locationConstraint(region)
-//                                    .build()
-//                    )
-//                    .build());
-//        } catch (Exception ex) {
-//            // Log but don't crash the app
-//            System.err.println("Bucket check/creation failed: " + ex.getMessage());
-//        }
-//    }
-
-
-    public DocumentMetadata processAndStore(MultipartFile file) {
-        DocumentMetadata documentMetadata = new DocumentMetadata();
-        try {
-            String key = UUID.randomUUID() + "-" + file.getOriginalFilename();
-            documentMetadata.setDocumentStatus(DocumentStatus.PULLED);
-            String hash = generateHash.calculateSha256(file);
-            System.out.println(hash);
-
-            // 1. Upload file to MinIO
-//        s3Client.putObject(PutObjectRequest.builder()
-//                        .bucket(bucket)
-//                        .key(key)
-//                        .build(),
-//                software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
-
-            // 2. Save file temporarily for OCR
-            File tempFile = File.createTempFile("upload", file.getOriginalFilename());
-            file.transferTo(tempFile);
-
-            // 3. Extract text using Tesseract
-            System.out.println("1");
-            Tesseract tesseract = new Tesseract();
-            tesseract.setDatapath(tesseractDataPath);
-            tesseract.setLanguage("eng");
-            tesseract.setOcrEngineMode(1); // LSTM
-            tesseract.setPageSegMode(6);
-            String extractedText = tesseract.doOCR(tempFile);
-            System.out.println(extractedText);
-
-
-            // 4. Store metadata in MongoDB
-            DocumentMetadata metadata = new DocumentMetadata();
-            metadata.setFileName(file.getOriginalFilename());
-            metadata.setS3Key(key);
-            String cleaned = extractedText
-                    .replaceAll("[\\n\\r]+", "\n")   // normalize line breaks
-                    .replaceAll("\\s{2,}", " ")      // collapse extra spaces
-                    .trim();
-
-            System.out.println("Going for LLM call");
-            String llmResponse = llmService.processWithOpenAPI(cleaned)
-                    .trim()
-                    .replaceAll("```json", "")
-                    .replaceAll("```", "")
-                    .trim();
-            System.out.println("LLM call OK");
-            System.out.println(llmResponse);
-
-            documentMetadata.setDocumentStatus(DocumentStatus.SUMMARIZED_OK);
-
-//        cleanUp to follow sanitization
-/*
-        private String sanitizeLLMResponse(String llmResponse) {
-            if (llmResponse == null) return "{}";
-            return llmResponse
-                    .trim()
-                    .replaceAll("(?s)```json", "")
-                    .replaceAll("(?s)```", "")
-                    .replaceAll("^[^\\{]*", "")  // remove everything before first {
-                    .replaceAll("[^\\}]*$", ""); // remove everything after last }
-        }
-*/
-
-//        metadata.setExtractedText(llmResponse);
-// Instead of doing this we should map the got response to our entity class for better field utilization
-            System.out.println(metadata);
-
-            documentMetadata = mapLLMResponseToModelClass(llmResponse, metadata);
-            documentMetadata.setDocumentStatus(DocumentStatus.PROCESSED_OK);
-
-//        documentMongoRepository.save(metadata);
-            documentMetadata.setDocumentStatus(DocumentStatus.SAVED_TO_DB);
-            documentMongoRepository.save(documentMetadata);
-
-
-
-            // 5. Index in Elasticsearch
-//            System.out.println("Going to save in Elastic");
-//            searchRepository.save(metadata);
-
-            // Cleanup
-            Files.deleteIfExists(tempFile.toPath());
-        } catch (Exception e) {
-            e.printStackTrace();
-            documentMetadata.setDocumentStatus(DocumentStatus.PARSING_FAILED);
-        }
-
-        return documentMetadata;
-    }
-/////////////////////////////// Utility For Mapping Response to Entity
-    private DocumentMetadata mapLLMResponseToModelClass(String llmResponse, DocumentMetadata metadata) throws JsonProcessingException {
-
-        JsonNode root = mapper.readTree(llmResponse);
-
-        metadata.setCategories(
-                mapper.convertValue(root.get("categories"), new TypeReference<List<String>>() {})
-        );
-        metadata.setKeywords(
-                mapper.convertValue(root.get("keywords"), new TypeReference<List<String>>() {})
-        );
-
-        // metadata object
-        DocumentMetadata.Metadata meta = new DocumentMetadata.Metadata();
-        meta.setTitle(root.path("metadata").path("title").asText());
-        meta.setAuthorOrSender(root.path("metadata").path("author_or_sender").asText());
-        meta.setDate(root.path("metadata").path("date").asText());
-        meta.setEntities(
-                mapper.convertValue(root.path("metadata").path("entities"), new TypeReference<List<String>>() {})
-        );
-        meta.setSummary(root.path("metadata").path("summary").asText());
-
-        metadata.setMetadata(meta);
-
-        // flexible fields
-        metadata.setDocumentSpecificFields(
-                mapper.convertValue(root.get("document_specific_fields"), new TypeReference<Map<String, Object>>() {})
-        );
-
-        return metadata;
+        this.ocrService = ocrService;
+        this.textCleaningService = textCleaningService;
+        this.llmProcessingService = llmProcessingService;
+        this.documentDataMapper = documentDataMapper;
+        this.documentPersistenceService = documentPersistenceService;
     }
 
     /**
-     * Create a pending document entry in database with PENDING status
-     * Used when file is first uploaded and sent to Kafka queue
+     * Create a pending document entry in database
      */
     public DocumentMetadata createPendingDocument(DocumentMetadata documentMetadata) {
-        String id = UUID.randomUUID().toString();
-        documentMetadata.setId(id);
-        documentMetadata.setDocumentStatus(DocumentStatus.PENDING);
-        return documentMongoRepository.save(documentMetadata);
+        return documentPersistenceService.createPendingDocument(documentMetadata);
     }
 
     /**
-     * Async method to process file bytes from Kafka queue
-     * Updates document status as processing progresses
+     * Main async processing pipeline for documents from Kafka queue
+     * Steps:
+     * 1. Update status to PROCESSING
+     * 2. Extract text via OCR
+     * 3. Clean extracted text
+     * 4. Process with LLM
+     * 5. Map response to document model
+     * 6. Save to database
+     * 7. Cleanup temp files
      */
     public DocumentMetadata processAndStore(byte[] fileBytes, String documentId) {
-        Optional<DocumentMetadata> existingDoc = documentMongoRepository.findById(documentId);
-        DocumentMetadata documentMetadata = existingDoc.orElseGet(DocumentMetadata::new);
-        
+        File tempFile = null;
         try {
-            // Update status to PROCESSING
-            documentMetadata.setDocumentStatus(DocumentStatus.PROCESSING);
-            documentMongoRepository.save(documentMetadata);
+            // Step 0: Retrieve existing document
+            DocumentMetadata document = documentPersistenceService.getDocumentById(documentId)
+                    .orElseGet(DocumentMetadata::new);
 
-            // Create temporary file from bytes
-            File tempFile = File.createTempFile("upload-" + documentId, ".tmp");
-            Files.write(tempFile.toPath(), fileBytes);
+            // Step 1: Update status to PROCESSING
+            documentPersistenceService.updateDocumentStatus(documentId, DocumentStatus.PROCESSING);
+            System.out.println("Processing document: " + documentId);
 
-            // Extract text using Tesseract (time-consuming OCR)
-            System.out.println("🔄 Starting OCR for document: " + documentId);
-            Tesseract tesseract = new Tesseract();
-            tesseract.setDatapath(tesseractDataPath);
-            tesseract.setLanguage("eng");
-            tesseract.setOcrEngineMode(1); // LSTM
-            tesseract.setPageSegMode(6);
-            String extractedText = tesseract.doOCR(tempFile);
+            // Step 2: Create temp file from bytes and extract text via OCR
+            tempFile = FileHandlingService.createTempFileFromBytes(documentId, fileBytes);
+            System.out.println("Starting OCR for document: " + documentId);
+            String extractedText = ocrService.extractText(tempFile);
 
-            // Clean extracted text
-            String cleaned = extractedText
-                    .replaceAll("[\\n\\r]+", "\n")
-                    .replaceAll("\\s{2,}", " ")
-                    .trim();
+            // Step 3: Clean extracted text
+            String cleanedText = textCleaningService.cleanText(extractedText);
 
-            // Process with LLM for extraction and categorization
-            System.out.println("🤖 Processing with LLM for document: " + documentId);
-            String llmResponse = llmService.processWithOpenAPI(cleaned)
-                    .trim()
-                    .replaceAll("```json", "")
-                    .replaceAll("```", "")
-                    .trim();
+            // Step 4: Process with LLM
+            System.out.println("Processing with LLM for document: " + documentId);
+            String llmResponse = llmProcessingService.processWithLLM(cleanedText);
 
-            // Map LLM response to document metadata
-            documentMetadata = mapLLMResponseToModelClass(llmResponse, documentMetadata);
-            documentMetadata.setDocumentStatus(DocumentStatus.PROCESSED_OK);
+            // Step 5: Map LLM response to document
+            document = documentDataMapper.mapLLMResponseToDocument(llmResponse, document);
+            document.setDocumentStatus(DocumentStatus.PROCESSED_OK);
 
-            // Save processed document
-            documentMetadata.setDocumentStatus(DocumentStatus.SAVED_TO_DB);
-            documentMongoRepository.save(documentMetadata);
+            // Step 6: Save to database
+            document.setDocumentStatus(DocumentStatus.SAVED_TO_DB);
+            document = documentPersistenceService.saveDocument(document);
+            System.out.println("Document processed successfully: " + documentId);
 
-            System.out.println("✅ Document processed successfully: " + documentId);
+            return document;
 
-            // Cleanup temp file
-            Files.deleteIfExists(tempFile.toPath());
-
+        } catch (TesseractException e) {
+            System.err.println("OCR Error processing document " + documentId + ": " + e.getMessage());
+            handleProcessingError(documentId, e);
+            return null;
+        } catch (JsonProcessingException e) {
+            System.err.println("JSON Mapping Error processing document " + documentId + ": " + e.getMessage());
+            handleProcessingError(documentId, e);
+            return null;
+        } catch (IOException e) {
+            System.err.println("File I/O Error processing document " + documentId + ": " + e.getMessage());
+            handleProcessingError(documentId, e);
+            return null;
         } catch (Exception e) {
-            System.err.println("❌ Error processing document " + documentId + ": " + e.getMessage());
+            System.err.println("Unexpected error processing document " + documentId + ": " + e.getMessage());
             e.printStackTrace();
-            documentMetadata.setDocumentStatus(DocumentStatus.PARSING_FAILED);
-            documentMongoRepository.save(documentMetadata);
-        }
-
-        return documentMetadata;
-    }
-
-    /**
-     * Mark document as failed with error message
-     */
-    public void markDocumentAsFailed(String documentId, String errorMessage) {
-        try {
-            Optional<DocumentMetadata> existingDoc = documentMongoRepository.findById(documentId);
-            if (existingDoc.isPresent()) {
-                DocumentMetadata doc = existingDoc.get();
-                doc.setDocumentStatus(DocumentStatus.PARSING_FAILED);
-                documentMongoRepository.save(doc);
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to update document status: " + e.getMessage());
+            handleProcessingError(documentId, e);
+            return null;
+        } finally {
+            // Cleanup temp file
+            FileHandlingService.deleteTempFile(tempFile);
         }
     }
 
     /**
-     * Get document status for polling
+     * Get document processing status
      */
     public DocumentMetadata getDocumentStatus(String documentId) {
-        return documentMongoRepository.findById(documentId).orElse(null);
+        return documentPersistenceService.getDocumentById(documentId).orElse(null);
+    }
+
+    /**
+     * Mark document as failed
+     */
+    public void markDocumentAsFailed(String documentId, String errorMessage) {
+        documentPersistenceService.markAsFailedWithError(documentId, errorMessage);
+    }
+
+    /**
+     * Handle processing errors by updating document status
+     */
+    private void handleProcessingError(String documentId, Exception e) {
+        try {
+            documentPersistenceService.updateDocumentStatus(documentId, DocumentStatus.PARSING_FAILED);
+        } catch (Exception ex) {
+            System.err.println("Failed to update document status to FAILED: " + ex.getMessage());
+        }
     }
 }
