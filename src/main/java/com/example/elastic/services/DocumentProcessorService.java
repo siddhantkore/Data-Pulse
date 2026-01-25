@@ -2,214 +2,134 @@ package com.example.elastic.services;
 
 import com.example.elastic.models.DocumentMetadata;
 import com.example.elastic.models.enums.DocumentStatus;
-import com.example.elastic.repository.DocumentMongoRepository;
-import com.example.elastic.services.llm.LLMService;
-import com.example.elastic.utils.hashing.GenerateHash;
+import com.example.elastic.services.extractors.UniversalTextExtractor;
+import com.example.elastic.services.processors.DocumentDataMapper;
+import com.example.elastic.services.processors.DocumentPersistenceService;
+import com.example.elastic.services.processors.LlmProcessingService;
+import com.example.elastic.services.processors.TextCleaningService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import net.sourceforge.tess4j.Tesseract;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Orchestrator service that coordinates document processing workflow.
+ * Delegates specific tasks to specialized services following SOLID principles.
+ */
 @Service
 public class DocumentProcessorService {
 
-    private final DocumentMongoRepository documentMongoRepository;
-//    private final DocumentSearchRepository searchRepository;
-    private final LLMService llmService;
-    private final String tesseractDataPath;
-    @Autowired
-    private GenerateHash generateHash;
+    private final UniversalTextExtractor textExtractor;
+    private final TextCleaningService textCleaningService;
+    private final LlmProcessingService llmProcessingService;
+    private final DocumentDataMapper documentDataMapper;
+    private final DocumentPersistenceService documentPersistenceService;
 
-    private final ObjectMapper mapper;
-//    private final S3Client s3Client;
-//    private final String bucket;
-//    private final String region;
-
-    @Autowired
     public DocumentProcessorService(
-            DocumentMongoRepository documentMongoRepository,
-//            DocumentSearchRepository searchRepository,
-            LLMService llmService,
-            ObjectMapper objectMapper,
-            @Value("${tesseract.datapath}") String tesseractDataPath
-//            @Value("${s3.endpoint}") String endpoint,
-//            @Value("${s3.access-key}") String accessKey,
-//            @Value("${s3.secret-key}") String secretKey,
-//            @Value("${s3.region}") String region,
-//            @Value("${s3.bucket}") String bucket
+            UniversalTextExtractor textExtractor,
+            TextCleaningService textCleaningService,
+            LlmProcessingService llmProcessingService,
+            DocumentDataMapper documentDataMapper,
+            DocumentPersistenceService documentPersistenceService
     ) {
-        this.documentMongoRepository = documentMongoRepository;
-        this.llmService = llmService;
-        this.mapper = objectMapper;
-        this.tesseractDataPath = tesseractDataPath;
-//        this.bucket = bucket;
-//
-//        this.s3Client = S3Client.builder()
-//                .endpointOverride(java.net.URI.create(endpoint))
-//                .region(Region.of(region))
-//                .credentialsProvider(StaticCredentialsProvider.create(
-//                        AwsBasicCredentials.create(accessKey, secretKey)))
-//                .serviceConfiguration(S3Configuration.builder()
-//                        .pathStyleAccessEnabled(true)  // important for MinIO in Docker
-//                        .build())
-//                .build();
-//        this.region = region;
-
+        this.textExtractor = textExtractor;
+        this.textCleaningService = textCleaningService;
+        this.llmProcessingService = llmProcessingService;
+        this.documentDataMapper = documentDataMapper;
+        this.documentPersistenceService = documentPersistenceService;
     }
 
-//    @PostConstruct
-//    public void initBucket() {
-//        try {
-//            // Check if bucket exists
-//            HeadBucketRequest headBucketRequest = HeadBucketRequest.builder()
-//                    .bucket(bucket)
-//                    .build();
-//            s3Client.headBucket(headBucketRequest);
-//        } catch (NoSuchBucketException e) {
-//            // Create if not exists
-//            s3Client.createBucket(CreateBucketRequest.builder()
-//                    .bucket(bucket)
-//                    .createBucketConfiguration(
-//                            CreateBucketConfiguration.builder()
-//                                    .locationConstraint(region)
-//                                    .build()
-//                    )
-//                    .build());
-//        } catch (Exception ex) {
-//            // Log but don't crash the app
-//            System.err.println("Bucket check/creation failed: " + ex.getMessage());
-//        }
-//    }
+    /**
+     * Creates a pending document entry in database.
+     *
+     * @param documentMetadata the document metadata to create
+     * @return saved document with generated ID
+     */
+    public DocumentMetadata createPendingDocument(DocumentMetadata documentMetadata) {
+        return documentPersistenceService.createPendingDocument(documentMetadata);
+    }
 
-
-    public DocumentMetadata processAndStore(MultipartFile file) {
-        DocumentMetadata documentMetadata = new DocumentMetadata();
+    /**
+     * Main async processing pipeline for documents from Kafka queue.
+     * Processing steps:
+     * 1. Update status to PROCESSING
+     * 2. Extract text using appropriate strategy
+     * 3. Clean extracted text
+     * 4. Process with LLM
+     * 5. Map response to document model
+     * 6. Save to database
+     *
+     * @param fileBytes the file content as byte array
+     * @param documentId the document ID
+     * @param fileName the original filename
+     * @return processed document metadata, or null if processing failed
+     */
+    public DocumentMetadata processAndStore(byte[] fileBytes, String documentId, String fileName) {
         try {
-            String key = UUID.randomUUID() + "-" + file.getOriginalFilename();
-            documentMetadata.setDocumentStatus(DocumentStatus.PULLED);
-            String hash = generateHash.calculateSha256(file);
-            System.out.println(hash);
+            DocumentMetadata document = documentPersistenceService.getDocumentById(documentId)
+                    .orElseGet(DocumentMetadata::new);
 
-            // 1. Upload file to MinIO
-//        s3Client.putObject(PutObjectRequest.builder()
-//                        .bucket(bucket)
-//                        .key(key)
-//                        .build(),
-//                software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
+            documentPersistenceService.updateDocumentStatus(documentId, DocumentStatus.PROCESSING);
+            System.out.println("Processing document: " + documentId);
 
-            // 2. Save file temporarily for OCR
-            File tempFile = File.createTempFile("upload", file.getOriginalFilename());
-            file.transferTo(tempFile);
+            String extractedText = textExtractor.extractText(fileBytes, fileName);
+            System.out.println("Text extraction completed for: " + documentId);
 
-            // 3. Extract text using Tesseract
-            System.out.println("1");
-            Tesseract tesseract = new Tesseract();
-            tesseract.setDatapath(tesseractDataPath);
-            tesseract.setLanguage("eng");
-            tesseract.setOcrEngineMode(1); // LSTM
-            tesseract.setPageSegMode(6);
-            String extractedText = tesseract.doOCR(tempFile);
-            System.out.println(extractedText);
+            String cleanedText = textCleaningService.cleanText(extractedText);
 
+            System.out.println("Processing with LLM for document: " + documentId);
+            String llmResponse = llmProcessingService.processWithLLM(cleanedText);
 
-            // 4. Store metadata in MongoDB
-            DocumentMetadata metadata = new DocumentMetadata();
-            metadata.setFileName(file.getOriginalFilename());
-            metadata.setS3Key(key);
-            String cleaned = extractedText
-                    .replaceAll("[\\n\\r]+", "\n")   // normalize line breaks
-                    .replaceAll("\\s{2,}", " ")      // collapse extra spaces
-                    .trim();
+            document = documentDataMapper.mapLLMResponseToDocument(llmResponse, document);
+            document.setDocumentStatus(DocumentStatus.PROCESSED_OK);
 
-            System.out.println("Going for LLM call");
-            String llmResponse = llmService.processWithOpenAPI(cleaned)
-                    .trim()
-                    .replaceAll("```json", "")
-                    .replaceAll("```", "")
-                    .trim();
-            System.out.println("LLM call OK");
-            System.out.println(llmResponse);
+            document.setDocumentStatus(DocumentStatus.SAVED_TO_DB);
+            document = documentPersistenceService.saveDocument(document);
+            System.out.println("Document processed successfully: " + documentId);
 
-            documentMetadata.setDocumentStatus(DocumentStatus.SUMMARIZED_OK);
+            return document;
 
-//        cleanUp to follow sanitization
-/*
-        private String sanitizeLLMResponse(String llmResponse) {
-            if (llmResponse == null) return "{}";
-            return llmResponse
-                    .trim()
-                    .replaceAll("(?s)```json", "")
-                    .replaceAll("(?s)```", "")
-                    .replaceAll("^[^\\{]*", "")  // remove everything before first {
-                    .replaceAll("[^\\}]*$", ""); // remove everything after last }
-        }
-*/
-
-//        metadata.setExtractedText(llmResponse);
-// Instead of doing this we should map the got response to our entity class for better field utilization
-            System.out.println(metadata);
-
-            documentMetadata = mapLLMResponseToModelClass(llmResponse, metadata);
-            documentMetadata.setDocumentStatus(DocumentStatus.PROCESSED_OK);
-
-//        documentMongoRepository.save(metadata);
-            documentMetadata.setDocumentStatus(DocumentStatus.SAVED_TO_DB);
-            documentMongoRepository.save(documentMetadata);
-
-
-
-            // 5. Index in Elasticsearch
-//            System.out.println("Going to save in Elastic");
-//            searchRepository.save(metadata);
-
-            // Cleanup
-            Files.deleteIfExists(tempFile.toPath());
+        } catch (JsonProcessingException e) {
+            System.err.println("JSON Mapping Error for " + documentId + ": " + e.getMessage());
+            handleProcessingError(documentId, e);
+            return null;
         } catch (Exception e) {
+            System.err.println("Error processing document " + documentId + ": " + e.getMessage());
             e.printStackTrace();
-            documentMetadata.setDocumentStatus(DocumentStatus.PARSING_FAILED);
+            handleProcessingError(documentId, e);
+            return null;
         }
-
-        return documentMetadata;
     }
-/////////////////////////////// Utility For Mapping Response to Entity
-    private DocumentMetadata mapLLMResponseToModelClass(String llmResponse, DocumentMetadata metadata) throws JsonProcessingException {
 
-        JsonNode root = mapper.readTree(llmResponse);
+    /**
+     * Gets document processing status.
+     *
+     * @param documentId the document ID
+     * @return document metadata, or null if not found
+     */
+    public DocumentMetadata getDocumentStatus(String documentId) {
+        return documentPersistenceService.getDocumentById(documentId).orElse(null);
+    }
 
-        metadata.setCategories(
-                mapper.convertValue(root.get("categories"), new TypeReference<List<String>>() {})
-        );
-        metadata.setKeywords(
-                mapper.convertValue(root.get("keywords"), new TypeReference<List<String>>() {})
-        );
+    /**
+     * Marks document as failed with error message.
+     *
+     * @param documentId the document ID
+     * @param errorMessage the error description
+     */
+    public void markDocumentAsFailed(String documentId, String errorMessage) {
+        documentPersistenceService.markAsFailedWithError(documentId, errorMessage);
+    }
 
-        // metadata object
-        DocumentMetadata.Metadata meta = new DocumentMetadata.Metadata();
-        meta.setTitle(root.path("metadata").path("title").asText());
-        meta.setAuthorOrSender(root.path("metadata").path("author_or_sender").asText());
-        meta.setDate(root.path("metadata").path("date").asText());
-        meta.setEntities(
-                mapper.convertValue(root.path("metadata").path("entities"), new TypeReference<List<String>>() {})
-        );
-        meta.setSummary(root.path("metadata").path("summary").asText());
-
-        metadata.setMetadata(meta);
-
-        // flexible fields
-        metadata.setDocumentSpecificFields(
-                mapper.convertValue(root.get("document_specific_fields"), new TypeReference<Map<String, Object>>() {})
-        );
-
-        return metadata;
+    /**
+     * Handles processing errors by updating document status.
+     *
+     * @param documentId the document ID
+     * @param exception the exception that occurred
+     */
+    private void handleProcessingError(String documentId, Exception exception) {
+        try {
+            documentPersistenceService.updateDocumentStatus(documentId, DocumentStatus.PARSING_FAILED);
+        } catch (Exception ex) {
+            System.err.println("Failed to update document status: " + ex.getMessage());
+        }
     }
 }

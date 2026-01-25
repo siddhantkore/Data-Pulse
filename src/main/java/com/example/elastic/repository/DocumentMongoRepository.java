@@ -1,23 +1,23 @@
 package com.example.elastic.repository;
 
-import com.example.elastic.models.DocumentMetadata;
-import java.util.List;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface DocumentMongoRepository extends MongoRepository<DocumentMetadata, String> {
-
-    @Query("{ '$or': [ " +
-            " { 'metadata.title': { $regex: ?0, $options: 'i' } }, " +
-            " { 'documentSpecificFields.dept': { $regex: ?0, $options: 'i' } }, " +
-            " { 'keywords': { $in: [?0] } } " +
-            "] }")
-    List<DocumentMetadata> searchByTitleDeptOrKeyword(String searchTerm);
-
-    @NotNull Page<DocumentMetadata> findAll(@NotNull Pageable pageable);
+/**
+ * @deprecated This class has been completely removed.
+ * Use {@link DocumentElasticsearchRepository} instead.
+ * 
+ * DocumentMongoRepository is no longer available as MongoDB has been removed
+ * from the application. All document persistence operations are now handled
+ * by DocumentElasticsearchRepository using Elasticsearch.
+ *
+ * Migration:
+ * - Replace all DocumentMongoRepository injections with DocumentElasticsearchRepository
+ * - Use OptimizedSearchService for search operations
+ * - See MIGRATION_GUIDE.md for complete migration instructions
+ *
+ * This file exists only as a marker and will be deleted in the next release.
+ */
+@Deprecated(since = "10.0", forRemoval = true)
+public interface DocumentMongoRepository {
+    // This interface is intentionally empty.
+    // MongoDB has been removed from the project.
+    // Use DocumentElasticsearchRepository instead.
 }

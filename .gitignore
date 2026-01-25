@@ -26,6 +26,7 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
+COMMIT_GILDE
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -52,3 +53,10 @@ sandbox
 
 studio/
 frontend/
+COMMIT_GUIDE.md
+FINAL_CHECKLIST.md
+IMPLEMENTATION_STATUS.md
+QUICK_START.md
+README_COMMITS_8_10.md
+SUMMARY.md
+CODE_VERIFICATION_COMPLETE.md
