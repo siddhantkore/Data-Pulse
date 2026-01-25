@@ -1,60 +1,160 @@
 package com.example.elastic.models;
 
 import com.example.elastic.models.enums.DocumentStatus;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Document metadata model stored and indexed in Elasticsearch.
+ * Contains document information, extracted content, and processing metadata.
+ */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(indexName = "documents")
 public class DocumentMetadata {
 
+    /**
+     * Unique document identifier.
+     */
     @Id
     private String id;
-    private String fileName;
-    private String s3Key;
-    private String extractedText; // we will be not using this in upcoming days, modify to remove it
 
-    // Core LLM response fields
+    /**
+     * Original filename of the uploaded document.
+     */
+    @Field(type = FieldType.Keyword)
+    private String fileName;
+
+    /**
+     * S3/blob storage key for document file retrieval.
+     */
+    @Field(type = FieldType.Keyword)
+    private String s3Key;
+
+    /**
+     * Full text extracted from document via OCR or native extraction.
+     */
+    @Field(type = FieldType.Text, analyzer = "standard")
+    private String extractedText;
+
+    /**
+     * Document categories assigned by LLM.
+     */
+    @Field(type = FieldType.Keyword)
     private List<String> categories;
+
+    /**
+     * Keywords extracted from document by LLM.
+     */
+    @Field(type = FieldType.Keyword)
     private List<String> keywords;
 
-    private Metadata metadata;  // nested object for standard fields
+    /**
+     * Structured metadata extracted from document.
+     */
+    private Metadata metadata;
 
-    // Flexible map for document-specific fields - May Vary
+    /**
+     * Flexible map for document-specific fields.
+     * Varies based on document type.
+     */
+    @Field(type = FieldType.Object)
     private Map<String, Object> documentSpecificFields;
 
-    @Data
-    public static class Metadata {
-        private String title;
-        private String authorOrSender;
-        private String date;
-        private List<String> entities;
-        private String summary;
-
-    }
-
-//    private List<String> labels;  to take manual labels from user
-
+    /**
+     * Current processing status of the document.
+     */
+    @Field(type = FieldType.Keyword)
     private DocumentStatus documentStatus;
 
-//    private String hashsha256;
-
-//    private Map<String, String> history; // Map<user, action>
-
+    /**
+     * Timestamp when document was created.
+     */
+    @Field(type = FieldType.Date)
     private LocalDateTime createdAtLocalDateTime = LocalDateTime.now();
 
+    /**
+     * Timestamp when document was last updated.
+     */
+    @Field(type = FieldType.Date)
     private LocalDateTime updatedAtLocalDateTime;
 
-}
+    /**
+     * MIME type of the document.
+     */
+    @Field(type = FieldType.Keyword)
+    private String mimeType;
 
-/**
- * fields to be included
- * hash sha256 for duplicate identification
- * access and update history for tracking
- *
- */
+    /**
+     * File size in bytes.
+     */
+    @Field(type = FieldType.Long)
+    private Long fileSizeBytes;
+
+    /**
+     * Document source (upload, gdrive, email, etc).
+     */
+    @Field(type = FieldType.Keyword)
+    private String source;
+
+    /**
+     * Document title extracted from metadata or content.
+     */
+    @Field(type = FieldType.Text)
+    private String title;
+
+    /**
+     * Relevance score calculated during search ranking (0.0 to 1.0).
+     * Not persisted in Elasticsearch, used for result ranking only.
+     */
+    private transient Double relevanceScore = 0.0;
+
+    /**
+     * Nested metadata object for structured field organization.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Metadata {
+
+        /**
+         * Document title.
+         */
+        @Field(type = FieldType.Text)
+        private String title;
+
+        /**
+         * Author or sender of the document.
+         */
+        @Field(type = FieldType.Keyword)
+        private String authorOrSender;
+
+        /**
+         * Document date (publication, creation, etc).
+         */
+        @Field(type = FieldType.Keyword)
+        private String date;
+
+        /**
+         * Named entities extracted from document.
+         */
+        @Field(type = FieldType.Keyword)
+        private List<String> entities;
+
+        /**
+         * Generated summary of document content.
+         */
+        @Field(type = FieldType.Text)
+        private String summary;
+    }
+}
