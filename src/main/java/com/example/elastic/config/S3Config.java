@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -17,6 +18,7 @@ import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 @Configuration
+@ConditionalOnProperty(prefix = "aws.s3", name = "endpoint", matchIfMissing = false)
 public class S3Config {
 
     @Value("${aws.s3.endpoint}")

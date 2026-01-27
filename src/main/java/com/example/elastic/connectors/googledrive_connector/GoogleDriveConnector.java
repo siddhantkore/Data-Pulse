@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 @Service
+@ConditionalOnBean(Drive.class)
 public class GoogleDriveConnector {
 
     // The Drive services instance used for all API calls

@@ -12,10 +12,12 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(prefix = "spring", name = "drive.path", matchIfMissing = false)
 public class GoogleDriveConfig {
 
     @Value("${spring.drive.path}")
@@ -28,18 +30,22 @@ public class GoogleDriveConfig {
     @Bean
     public Drive driveService() throws IOException {
         List<String> scopes = Collections.singletonList(DriveScopes.DRIVE_FILE);
+        try {
 
-        InputStream in = GoogleDriveConfig.class.getResourceAsStream(credentialsPath);
-        if (in == null) {
-            java.io.File file = new java.io.File(credentialsPath);
-            if (!file.exists()) {
-                throw new IOException("Credentials file not found at path: " + credentialsPath);
+            InputStream in = GoogleDriveConfig.class.getResourceAsStream(credentialsPath);
+            if (in == null) {
+                java.io.File file = new java.io.File(credentialsPath);
+                if (!file.exists()) {
+                    throw new IOException("Credentials file not found at path: " + credentialsPath);
+                }
+                in = new FileInputStream(file);
             }
-            in = new FileInputStream(file);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
-        Credential credential = null;// GoogleCredential.fromStream(in)
-//                .createScoped(scopes); // use correct .json as this is not serve specific refer google cloud console
+            Credential credential = null;// GoogleCredential.fromStream(in)
+    //                .createScoped(scopes); // use correct .json as this is not serve specific refer google cloud console
 
         return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
