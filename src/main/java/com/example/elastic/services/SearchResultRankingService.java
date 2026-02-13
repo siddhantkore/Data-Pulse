@@ -190,13 +190,38 @@ public class SearchResultRankingService {
      */
     private double calculateRecencyScore(DocumentMetadata document) {
         try {
-            if (document.getUpdatedAtLocalDateTime() == null) {
+            Object updatedAtObj = document.getUpdatedAtLocalDateTime();
+
+            if (updatedAtObj == null) {
                 return 0.5; // Default score if timestamp unavailable
             }
 
+            java.time.LocalDate updatedDate = null;
+            if (updatedAtObj instanceof java.time.OffsetDateTime) {
+                updatedDate = ((java.time.OffsetDateTime) updatedAtObj).toLocalDate();
+            } else if (updatedAtObj instanceof String) {
+                String dateStr = (String) updatedAtObj;
+                try {
+                    if (dateStr.length() > 10) {
+                        // Assume ISO-like format with time
+                        updatedDate = java.time.OffsetDateTime.parse(dateStr).toLocalDate();
+                    } else {
+                        // Assume Date only
+                        updatedDate = java.time.LocalDate.parse(dateStr);
+                    }
+                } catch (Exception e) {
+                    // Fallback attempt
+                    try { updatedDate = java.time.LocalDate.parse(dateStr.substring(0, 10)); } catch (Exception ex) {}
+                }
+            }
+
+            if (updatedDate == null) {
+                return 0.5;
+            }
+
             long ageInDays = java.time.temporal.ChronoUnit.DAYS.between(
-                    document.getUpdatedAtLocalDateTime(),
-                    java.time.LocalDateTime.now()
+                    updatedDate,
+                    java.time.LocalDate.now()
             );
 
             // Exponential decay: score decreases with age

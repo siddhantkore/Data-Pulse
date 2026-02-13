@@ -82,14 +82,14 @@ public class DocumentMetadata {
     /**
      * Timestamp when document was created.
      */
-    @Field(type = FieldType.Date, format = {DateFormat.date_time, DateFormat.date})
-    private OffsetDateTime createdAtLocalDateTime = OffsetDateTime.now(ZoneOffset.UTC);
+    @Field(type = FieldType.Date, format = {}, pattern = "uuuu-MM-dd'T'HH:mm:ss.SSSX||uuuu-MM-dd'T'HH:mm:ss.SSS||uuuu-MM-dd")
+    private Object createdAtLocalDateTime = OffsetDateTime.now(ZoneOffset.UTC);
 
     /**
      * Timestamp when document was last updated.
      */
-    @Field(type = FieldType.Date, format = {DateFormat.date_time, DateFormat.date})
-    private OffsetDateTime updatedAtLocalDateTime;
+    @Field(type = FieldType.Date, format = {}, pattern = "uuuu-MM-dd'T'HH:mm:ss.SSSX||uuuu-MM-dd'T'HH:mm:ss.SSS||uuuu-MM-dd")
+    private Object updatedAtLocalDateTime;
 
     /**
      * MIME type of the document.
