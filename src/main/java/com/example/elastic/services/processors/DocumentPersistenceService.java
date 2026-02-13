@@ -5,7 +5,8 @@ import com.example.elastic.models.enums.DocumentStatus;
 import com.example.elastic.repository.DocumentElasticsearchRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,8 +33,8 @@ public class DocumentPersistenceService {
         String id = UUID.randomUUID().toString();
         documentMetadata.setId(id);
         documentMetadata.setDocumentStatus(DocumentStatus.UPLOADED);
-        documentMetadata.setCreatedAtLocalDateTime(LocalDateTime.now());
-        documentMetadata.setUpdatedAtLocalDateTime(LocalDateTime.now());
+        documentMetadata.setCreatedAtLocalDateTime(OffsetDateTime.now(ZoneOffset.UTC));
+        documentMetadata.setUpdatedAtLocalDateTime(OffsetDateTime.now(ZoneOffset.UTC));
         return documentRepository.save(documentMetadata);
     }
 
@@ -56,7 +57,7 @@ public class DocumentPersistenceService {
     public void updateDocumentStatus(String documentId, DocumentStatus status) {
         documentRepository.findById(documentId).ifPresent(doc -> {
             doc.setDocumentStatus(status);
-            doc.setUpdatedAtLocalDateTime(LocalDateTime.now());
+            doc.setUpdatedAtLocalDateTime(OffsetDateTime.now(ZoneOffset.UTC));
             documentRepository.save(doc);
         });
     }
@@ -68,7 +69,7 @@ public class DocumentPersistenceService {
      * @return saved document
      */
     public DocumentMetadata saveDocument(DocumentMetadata documentMetadata) {
-        documentMetadata.setUpdatedAtLocalDateTime(LocalDateTime.now());
+        documentMetadata.setUpdatedAtLocalDateTime(OffsetDateTime.now(ZoneOffset.UTC));
         return documentRepository.save(documentMetadata);
     }
 
@@ -81,7 +82,7 @@ public class DocumentPersistenceService {
     public void markAsFailedWithError(String documentId, String errorMessage) {
         documentRepository.findById(documentId).ifPresent(doc -> {
             doc.setDocumentStatus(DocumentStatus.PARSING_FAILED);
-            doc.setUpdatedAtLocalDateTime(LocalDateTime.now());
+            doc.setUpdatedAtLocalDateTime(OffsetDateTime.now(ZoneOffset.UTC));
             documentRepository.save(doc);
         });
     }

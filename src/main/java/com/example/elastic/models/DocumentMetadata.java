@@ -5,11 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -80,14 +82,14 @@ public class DocumentMetadata {
     /**
      * Timestamp when document was created.
      */
-    @Field(type = FieldType.Date)
-    private LocalDateTime createdAtLocalDateTime = LocalDateTime.now();
+    @Field(type = FieldType.Date, format = {DateFormat.date_time, DateFormat.date})
+    private OffsetDateTime createdAtLocalDateTime = OffsetDateTime.now(ZoneOffset.UTC);
 
     /**
      * Timestamp when document was last updated.
      */
-    @Field(type = FieldType.Date)
-    private LocalDateTime updatedAtLocalDateTime;
+    @Field(type = FieldType.Date, format = {DateFormat.date_time, DateFormat.date})
+    private OffsetDateTime updatedAtLocalDateTime;
 
     /**
      * MIME type of the document.

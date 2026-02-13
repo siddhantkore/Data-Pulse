@@ -1,6 +1,5 @@
 package com.example.elastic.connectors.mail_connectors;
 
-import com.example.elastic.sandbox.Sandbox;
 import com.example.elastic.services.DocumentProcessorService;
 import com.example.elastic.utils.InMemoryMultipartFile;
 import jakarta.mail.BodyPart;
@@ -95,8 +94,6 @@ public class GmailIMAPConnector implements EmailConnector {
             Date sinceDate = cal.getTime();
 
             Message[] messages = inbox.search(new ReceivedDateTerm(ComparisonTerm.GT, sinceDate));
-            Sandbox sandbox = new Sandbox();
-            sandbox.printMessages(messages);
             LOGGER.info("Found {} messages.", messages.length);
 
             for (Message message : messages) {
