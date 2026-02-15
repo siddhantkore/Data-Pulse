@@ -86,7 +86,7 @@
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Backend Framework
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.5-6DB33F?style=flat-square&logo=spring)
@@ -112,30 +112,16 @@
 
 ---
 
-## 🏗 Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Client Layer                            │
-│                    (REST API Consumers)                         │
-└────────────────────────────────┬────────────────────────────────┘
-                                 │
-┌────────────────────────────────▼────────────────────────────────┐
-│                    Spring Boot Application                      │
-│  ┌──────────────┐  ┌���─────────────┐  ┌──────────────┐         │
-│  │  Controllers │  │   Services   │  │   Utilities  │         │
-│  │   (REST)     │──│  (Business)  │──│   (OCR/AI)   │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└───────────┬──────────────┬──────────────┬──────────────────────┘
-            │              │              │
-  ┌─────────▼────┐  ┌──────▼─────┐  ┌────▼─────┐  ┌──────────┐
-  │ Elasticsearch│  │  MongoDB   │  │  MinIO   │  │ LLM APIs │
-  │  (Search &   │  │ (Document  │  │   (S3    │  │(OpenAI/  │
-  │   Indexing)  │  │  Storage)  │  │ Storage) │  │ Gemini)  │
-  └──────────────┘  └────────────┘  └──────────┘  └──────────┘
-```
+
+## Architecture
+
+[![Architecture Diagram](Data-Pulse-Arch-Diagram.svg)](Data-Pulse-Arch-Diagram.svg)
+
+*Click the diagram above to view in full resolution*
 
 ---
+
 
 ## Prerequisites
 
@@ -579,10 +565,10 @@ Format: Google Java Format (AOSP variant)
 ```
 
 This runs:
-- ✅ Unit tests
-- ✅ Checkstyle validation
-- ✅ Spotless formatting
-- ✅ Integration tests
+- Unit tests
+- Checkstyle validation
+- Spotless formatting
+- Integration tests
 
 ---
 
