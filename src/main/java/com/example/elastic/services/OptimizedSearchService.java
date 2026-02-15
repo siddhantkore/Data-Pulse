@@ -82,12 +82,45 @@ public class OptimizedSearchService {
      */
     public List<DocumentMetadata> fullTextSearch(String query) {
         try {
+            // "Search Everything" approach
+            // 1. Fuzzy match across ALL text fields
+            // 2. Wildcard match (*term*) across ALL text fields for partial retrieval
             NativeQuery searchQuery = NativeQuery.builder()
                     .withQuery(q -> q
-                            .multiMatch(m -> m
-                                    .fields("title^3", "fileName^2", "extractedText", "keywords")
-                                    .query(query)
-                                    .fuzziness("AUTO")
+                            .bool(b -> b
+                                    // 1. Broad fuzzy match on all queryable text fields
+                                    .should(s -> s
+                                            .multiMatch(m -> m
+                                                    .fields(
+                                                            "title^3",
+                                                            "fileName^2",
+                                                            "extractedText",
+                                                            "keywords",
+                                                            "categories",
+                                                            "metadata.summary",
+                                                            "metadata.authorOrSender",
+                                                            "metadata.entities",
+                                                            "metadata.title"
+                                                    )
+                                                    .query(query)
+                                                    .fuzziness("AUTO")
+                                            )
+                                    )
+                                    .should(s -> s
+                                            .queryString(qs -> qs
+                                                    // Use wildcard on all main text fields
+                                                    .fields(
+                                                            "title",
+                                                            "fileName",
+                                                            "extractedText",
+                                                            "keywords",
+                                                            "categories",
+                                                            "metadata.*" // Search all nested metadata fields
+                                                    )
+                                                    .query("*" + query + "*")
+                                                    .analyzeWildcard(true)
+                                            )
+                                    )
                             )
                     )
                     .build();

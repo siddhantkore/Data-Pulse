@@ -52,7 +52,6 @@ sandbox
 .db
 
 studio/
-frontend/
 COMMIT_GUIDE.md
 FINAL_CHECKLIST.md
 IMPLEMENTATION_STATUS.md

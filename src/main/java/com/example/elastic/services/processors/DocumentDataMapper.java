@@ -47,6 +47,11 @@ public class DocumentDataMapper {
         DocumentMetadata.Metadata metadata = mapMetadata(root);
         documentMetadata.setMetadata(metadata);
 
+        // Also set top-level title for search optimization
+        if (metadata != null && metadata.getTitle() != null) {
+            documentMetadata.setTitle(metadata.getTitle());
+        }
+
         // Map flexible document-specific fields
         documentMetadata.setDocumentSpecificFields(
                 objectMapper.convertValue(root.get("document_specific_fields"), new TypeReference<Map<String, Object>>() {})

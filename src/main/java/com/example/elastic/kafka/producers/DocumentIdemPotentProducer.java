@@ -31,7 +31,13 @@ public class DocumentIdemPotentProducer {
      * @throws IOException if file reading fails
      */
     public void sendFile(MultipartFile file, String documentId) throws IOException {
-        kafkaTemplate.send(topic, documentId, file.getBytes());
+        Message<byte[]> message = MessageBuilder
+                .withPayload(file.getBytes())
+                .setHeader(KafkaHeaders.TOPIC, topic)
+                .setHeader(KafkaHeaders.KEY, documentId)
+                .setHeader("fileName", file.getOriginalFilename())
+                .build();
+        kafkaTemplate.send(message);
     }
 
     /**
@@ -43,6 +49,12 @@ public class DocumentIdemPotentProducer {
      * @throws IOException if sending fails
      */
     public void sendFileBytes(byte[] fileBytes, String documentId, String fileName) throws IOException {
-        kafkaTemplate.send(topic, documentId, fileBytes);
+        Message<byte[]> message = MessageBuilder
+                .withPayload(fileBytes)
+                .setHeader(KafkaHeaders.TOPIC, topic)
+                .setHeader(KafkaHeaders.KEY, documentId)
+                .setHeader("fileName", fileName)
+                .build();
+        kafkaTemplate.send(message);
     }
 }

@@ -74,6 +74,7 @@ public class DocumentProcessorService {
             System.out.println("Text extraction completed for: " + documentId);
 
             String cleanedText = textCleaningService.cleanText(extractedText);
+            document.setExtractedText(cleanedText);
 
             System.out.println("Processing with LLM for document: " + documentId);
             String llmResponse = llmProcessingService.processWithLLM(cleanedText);
